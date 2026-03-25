@@ -15,7 +15,6 @@ def get_base64(bin_file):
             return base64.b64encode(f.read()).decode()
     except: return None
 
-# Zorg dat dit bestand in je repo staat, anders pakt hij de fallback
 logo_b64 = get_base64("Gemini_Generated_Image_ch8eerch8eerch8e.jpg")
 logo_img = f'<img src="data:image/jpeg;base64,{logo_b64}" class="brand-logo">' if logo_b64 else '<div class="brand-logo-fallback">⚡</div>'
 
@@ -80,23 +79,17 @@ texts = {
 }
 t = texts[lang]
 
-# Extra check op session state keys
 for key in ['rizz_master', 'chat_history', 'sim_active']:
     if key not in st.session_state:
-        if key == 'chat_history': st.session_state[key] = []
-        elif key == 'sim_active': st.session_state[key] = False
-        else: st.session_state[key] = None
+        st.session_state[key] = [] if key == 'chat_history' else (False if key == 'sim_active' else None)
 
 # --- 4. CORE HELPERS ---
 def extract_json(text):
-    """Vist de JSON uit de tekst, zelfs als er AI-gebrabbel omheen staat."""
     try:
         match = re.search(r'\{.*\}', text, re.DOTALL)
-        if match:
-            return json.loads(match.group())
+        if match: return json.loads(match.group())
         return json.loads(text)
-    except:
-        return None
+    except: return None
 
 def process_img(file):
     img = Image.open(file).convert('RGB')
@@ -143,42 +136,39 @@ else:
                                 model="grok-4.20-0309-non-reasoning", 
                                 response_format={"type": "json_object"},
                                 messages=[
-                                    {"role": "system", "content": "You are Rizz Architect 4.0. Mission: Analyze social data. Output MUST be valid JSON. Fields: weather, outfit, options (list of 3 with 'zin' and 'type'), architect_pick (dict with 'choice' and 'reason')."},
-                                    {"role": "user", "content": [
-                                        {"type": "text", "text": f"Platform: {platform}. Context: {context}. Target city: {t_city}."},
-                                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
-                                    ]}
+                                    {"role": "system", "content": "You are Rizz Architect 4.0. Output ONLY JSON. Fields: weather, outfit, options (list of 3 with 'zin' and 'type'), architect_pick (dict with 'choice' and 'reason')."},
+                                    {"role": "user", "content": [{"type": "text", "text": f"Platform: {platform}. Context: {context}."}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}]}
                                 ]
                             )
-                            parsed_data = extract_json(res.choices[0].message.content)
-                            if parsed_data:
-                                st.session_state.rizz_master = parsed_data
+                            parsed = extract_json(res.choices[0].message.content)
+                            if parsed:
+                                st.session_state.rizz_master = parsed
                                 st.rerun()
-                            else:
-                                st.error("AI returned invalid JSON structure.")
-                        except Exception as e: st.error(f"Grok Error: {e}")
+                        except Exception as e: st.error(f"Error: {e}")
         
         with c2:
             if st.session_state.rizz_master:
                 data = st.session_state.rizz_master
                 st.markdown(f"<div class='label-tag'>{t['report']}</div>", unsafe_allow_html=True)
-                st.markdown(f'<div class="glass-card"><b>{t["weather"]}</b> {data.get("weather", "N/A")}<br><b>{t["armor"]}</b> {data.get("outfit", "N/A")}</div>', unsafe_allow_html=True)
                 
-                # --- DEFENSIVE DATA EXTRACTION ---
+                # Weer & Outfit extraction
+                w = data.get("weather", data.get("weer", "N/A"))
+                o = data.get("outfit", data.get("kleding", "N/A"))
+                st.markdown(f'<div class="glass-card"><b>{t["weather"]}</b> {w}<br><b>{t["armor"]}</b> {o}</div>', unsafe_allow_html=True)
+                
+                # Master Parser voor Pick
                 raw_pick = data.get('architect_pick', {})
                 p = raw_pick if isinstance(raw_pick, dict) else {"choice": 1, "reason": str(raw_pick)}
                 options = data.get('options', [])
                 
                 if options and isinstance(options, list):
                     try:
-                        choice_int = int(p.get('choice', 1))
-                    except:
-                        choice_int = 1
+                        c_idx = int(p.get('choice', 1)) - 1
+                    except: c_idx = 0
                     
-                    idx = max(0, min(choice_int - 1, len(options) - 1))
-                    best = options[idx]
+                    c_idx = max(0, min(c_idx, len(options) - 1))
+                    best = options[c_idx]
                     
-                    # Safe text extraction
                     d_zin = best.get('zin', str(best)) if isinstance(best, dict) else str(best)
                     d_type = best.get('type', 'Strategy') if isinstance(best, dict) else 'Executioner'
 
@@ -189,11 +179,11 @@ else:
                 st.info(t['info'])
 
     with tab2:
-        st.markdown("<div class='label-tag'>Combat Simulator</div>", unsafe_allow_html=True)
+        st.markdown("<div class='label-tag'>Combat Simulator</div>")
         if not st.session_state.sim_active:
             if st.button("START NEURAL SIMULATION"):
                 st.session_state.sim_active = True
-                st.session_state.chat_history = [{"role": "assistant", "content": "Ready. What's the target situation?"}]
+                st.session_state.chat_history = [{"role": "assistant", "content": "Ready."}]
                 st.rerun()
         else:
             for m in st.session_state.chat_history:
@@ -202,10 +192,7 @@ else:
                 st.session_state.chat_history.append({"role": "user", "content": pr})
                 with st.chat_message("assistant"):
                     client = OpenAI(api_key=user_api_key, base_url="https://api.x.ai/v1")
-                    r = client.chat.completions.create(
-                        model="grok-4-1-fast-non-reasoning", 
-                        messages=[{"role":"system","content":"Dating sparring mode. Hard mode."}] + st.session_state.chat_history
-                    )
+                    r = client.chat.completions.create(model="grok-4-1-fast-non-reasoning", messages=[{"role":"system","content":"Dating sparring."}] + st.session_state.chat_history)
                     rep = r.choices[0].message.content
                     st.markdown(rep)
                     st.session_state.chat_history.append({"role": "assistant", "content": rep})
