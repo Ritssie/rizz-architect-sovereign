@@ -4,7 +4,6 @@ from PIL import Image
 import base64
 import io
 import json
-import urllib.parse
 
 # --- 1. CONFIG & SETUP ---
 st.set_page_config(page_title="Rizz Architect Ultra 4.0", page_icon="⚡", layout="wide")
@@ -35,6 +34,8 @@ st.markdown(f"""
     .glass-card {{ background: rgba(15, 23, 42, 0.8) !important; border: 1px solid rgba(252, 211, 77, 0.2) !important; border-radius: 20px; padding: 20px; }}
     .pick-container {{ border-left: 5px solid #fcd34d; padding: 25px; margin-top: 25px; background: rgba(252, 211, 77, 0.03); border-radius: 0 20px 20px 0; }}
     .label-tag {{ font-family: 'JetBrains Mono', monospace; color: #fcd34d !important; font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }}
+    /* Styling voor de copy-box */
+    .stCodeBlock {{ background-color: rgba(252, 211, 77, 0.05) !important; border: 1px dashed #fcd34d !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -56,7 +57,8 @@ texts = {
         "scan_btn": "⚡ START GROK-4 SCAN",
         "report": "Intelligence Rapport",
         "weather": "📍 Klimaat:",
-        "armor": "🛡️ Aanbevolen Armor:"
+        "armor": "🛡️ Aanbevolen Armor:",
+        "copy_hint": "Klik hieronder om te kopiëren:"
     },
     "EN": {
         "warning": "⚠️ Waiting for Grok-4 API Credentials...",
@@ -71,7 +73,8 @@ texts = {
         "scan_btn": "⚡ INITIATE GROK-4 SCAN",
         "report": "Intelligence Report",
         "weather": "📍 Climate:",
-        "armor": "🛡️ Recommended Armor:"
+        "armor": "🛡️ Recommended Armor:",
+        "copy_hint": "Click below to copy:"
     }
 }
 t = texts[lang]
@@ -114,7 +117,7 @@ else:
             st.markdown(f"<div class='label-tag'>{t['intake']}</div>", unsafe_allow_html=True)
             u_file = st.file_uploader("Screenshot", type=['png', 'jpg', 'jpeg'], label_visibility="collapsed")
             if u_file:
-                st.image(u_file, width='stretch') # FIX: Streamlit 2026 update
+                st.image(u_file, width='stretch')
                 context = st.text_area(t['context'], placeholder="Describe the energy...")
                 if st.button(t['scan_btn']):
                     with st.spinner(t['wait']):
@@ -125,52 +128,62 @@ else:
                                 model="grok-4.20-0309-non-reasoning", 
                                 response_format={"type": "json_object"},
                                 messages=[
-                                    {"role": "system", "content": f"Identity: Rizz Architect Ultra 4.0. Output ONLY JSON. Structure: {{'weather': '', 'outfit': '', 'options': [{{'type': '', 'zin': ''}}], 'architect_pick': {{'choice': 1, 'reason': ''}}}}"},
+                                    {"role": "system", "content": f"Identity: Rizz Architect Ultra 4.0. Mission: Analyze {platform}. Platform: {platform}. Context: {context}. Return ONLY JSON. Options must contain 'zin' and 'type'."},
                                     {"role": "user", "content": [
-                                        {"type": "text", "text": f"Platform: {platform}. Context: {context}."},
+                                        {"type": "text", "text": "Analyze target. Return JSON: weather, outfit, options (list of 3 with type and zin), architect_pick (dict with choice int and reason)."},
                                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
                                     ]}
                                 ]
                             )
                             st.session_state.rizz_master = json.loads(res.choices[0].message.content)
                             st.rerun()
-                        except Exception as e: st.error(f"Grok-4 Error: {e}")
+                        except Exception as e: st.error(f"Grok-4 Scan Error: {e}")
         with c2:
             if st.session_state.rizz_master:
                 data = st.session_state.rizz_master
                 st.markdown(f"<div class='label-tag'>{t['report']}</div>", unsafe_allow_html=True)
                 st.markdown(f'<div class="glass-card"><b>{t["weather"]}</b> {data.get("weather", "N/A")}<br><b>{t["armor"]}</b> {data.get("outfit", "N/A")}</div>', unsafe_allow_html=True)
                 
+                # --- SAFE DATA PARSING ---
                 p = data.get('architect_pick', {})
+                if not isinstance(p, dict): p = {"choice": 1, "reason": str(p)}
                 options = data.get('options', [])
                 
                 if options and isinstance(options, list):
-                    try:
-                        choice_int = int(p.get('choice', 1))
+                    try: choice_int = int(p.get('choice', 1))
                     except: choice_int = 1
                     
                     idx = max(0, min(choice_int - 1, len(options) - 1))
                     best = options[idx]
                     
-                    # --- EXTRA CHECK: Is 'best' een dictionary of een string? ---
-                    display_zin = best.get('zin', '...') if isinstance(best, dict) else str(best)
-                    display_type = best.get('type', 'Strategy') if isinstance(best, dict) else 'Executioner'
+                    d_zin = best.get('zin', '...') if isinstance(best, dict) else str(best)
+                    d_type = best.get('type', 'Strategy') if isinstance(best, dict) else 'Executioner'
 
                     st.markdown(f"""
                         <div class="pick-container">
                             <div class='label-tag'>{t['pick']}</div>
-                            <h1 style="margin:0; color:#ffffff; font-size:1.8rem;">"{display_zin}"</h1>
-                            <div style="margin-top:15px; color:#fcd34d; font-size:0.85rem;">
-                                <b>{t['strategy']} ({display_type}):</b> {p.get('reason', 'Analyzed by Grok-4.')}
+                            <p style="color:#fcd34d; font-size:0.8rem; margin-bottom:5px;">{t['copy_hint']}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # De "Magic Copy" box
+                    st.code(d_zin, language=None)
+                    
+                    st.markdown(f"""
+                        <div style="padding: 0 25px;">
+                            <div style="margin-top:10px; color:#94a3b8; font-size:0.85rem;">
+                                <b>{t['strategy']} ({d_type}):</b> {p.get('reason', 'Analyzed by Grok-4.')}
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
+                else:
+                    st.info("System refresh required. Data structure mismatch.")
             else:
                 st.info(t['info'])
 
     with tab2:
         st.markdown("<div class='label-tag'>Combat Simulator</div>", unsafe_allow_html=True)
-        if not st.session_state.sim_active:
+        if not st.session_state.get('sim_active', False):
             if st.button("START NEURAL SIMULATION"):
                 st.session_state.sim_active = True
                 st.session_state.chat_history = [{"role": "assistant", "content": "Hey. What's the move?"}]
