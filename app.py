@@ -28,7 +28,7 @@ st.markdown(f"""
         font-family: 'Inter', sans-serif;
     }}
     .brand-banner {{ display: flex; align-items: center; justify-content: center; gap: 20px; padding: 20px 0; border-bottom: 2px solid rgba(252, 211, 77, 0.3); margin-bottom: 25px; }}
-    .brand-logo {{ width: 70px; height: 70px; border-radius: 15px; border: 2px solid #fcd34d; box-shadow: 0 0 20px rgba(252, 211, 77, 0.4); }}
+    .brand-logo {{ width: 70px; height: 70px; border-radius: 15px; border: 2px solid #fcd34d; box-shadow: 0 0 20px rgba(252, 211, 77, 0.4); object-fit: cover; }}
     .logotype {{ font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 800; color: #ffffff !important; }}
     .logotype span {{ color: #fcd34d !important; text-shadow: 0 0 10px rgba(252, 211, 77, 0.5); }}
     .stButton>button {{ width: 100%; background: linear-gradient(90deg, #fcd34d 0%, #fbbf24 100%) !important; color: #000000 !important; font-weight: 800; border-radius: 12px; border: none !important; text-transform: uppercase; }}
@@ -139,22 +139,33 @@ else:
             if st.session_state.rizz_master:
                 data = st.session_state.rizz_master
                 st.markdown(f"<div class='label-tag'>{t['report']}</div>", unsafe_allow_html=True)
-                st.markdown(f'<div class="glass-card"><b>{t["weather"]}</b> {data.get("weather")}<br><b>{t["armor"]}</b> {data.get("outfit")}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="glass-card"><b>{t["weather"]}</b> {data.get("weather", "N/A")}<br><b>{t["armor"]}</b> {data.get("outfit", "N/A")}</div>', unsafe_allow_html=True)
                 
+                # --- LOGICA SEGURA PARA EVITAR CRASHES ---
                 p = data.get('architect_pick', {})
                 options = data.get('options', [])
-                if options:
-                    idx = max(0, min(int(p.get('choice', 1)) - 1, len(options)-1))
+                
+                if options and isinstance(options, list):
+                    try:
+                        raw_choice = p.get('choice', 1)
+                        choice_int = int(raw_choice)
+                    except (ValueError, TypeError):
+                        choice_int = 1
+                    
+                    idx = max(0, min(choice_int - 1, len(options) - 1))
                     best = options[idx]
+                    
                     st.markdown(f"""
                         <div class="pick-container">
                             <div class='label-tag'>{t['pick']}</div>
-                            <h1 style="margin:0; color:#ffffff; font-size:1.8rem;">"{best.get('zin')}"</h1>
+                            <h1 style="margin:0; color:#ffffff; font-size:1.8rem;">"{best.get('zin', '...')}"</h1>
                             <div style="margin-top:15px; color:#fcd34d; font-size:0.85rem;">
-                                <b>{t['strategy']} ({best.get('type')}):</b> {p.get('reason')}
+                                <b>{t['strategy']} ({best.get('type', 'Strategie')}):</b> {p.get('reason', 'Architect reason hidden.')}
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
+                else:
+                    st.info("AI did not return valid options. Try again.")
             else:
                 st.info(t['info'])
 
@@ -174,7 +185,7 @@ else:
                     client = OpenAI(api_key=user_api_key, base_url="https://api.x.ai/v1")
                     r = client.chat.completions.create(
                         model="grok-4-1-fast-non-reasoning", 
-                        messages=[{"role":"system","content":"Dating sim. Challenge the user."}] + st.session_state.chat_history
+                        messages=[{"role":"system","content":"Dating sim match. Be challenging and realistic."}] + st.session_state.chat_history
                     )
                     rep = r.choices[0].message.content
                     st.markdown(rep)
