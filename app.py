@@ -19,28 +19,50 @@ def get_base64(bin_file):
 logo_b64 = get_base64("Gemini_Generated_Image_ch8eerch8eerch8e.jpg")
 logo_img = f'<img src="data:image/jpeg;base64,{logo_b64}" class="brand-logo">' if logo_b64 else '<div class="brand-logo-fallback">⚡</div>'
 
-# --- 2. CSS (Huisstijl op basis van logo) ---
+# --- 2. CSS (GEOPTIMALISEERD VOOR MOBIEL) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&family=Playfair+Display:wght@700&display=swap');
     
     .stApp {{ background-color: #010409; color: #e2e8f0; font-family: 'Space Grotesk', sans-serif; }}
     
-    .brand-banner {{ display: flex; align-items: center; justify-content: center; gap: 25px; padding: 40px 0; border-bottom: 1px solid rgba(252, 211, 77, 0.1); }}
-    .brand-logo {{ width: 90px; height: 90px; border-radius: 20px; border: 2px solid #fcd34d; box-shadow: 0 0 30px rgba(252, 211, 77, 0.25); }}
-    .logotype {{ font-family: 'Playfair Display', serif; font-size: 3.5rem; font-weight: 700; }}
+    /* AANGEPASTE HEADER VOOR MINDER SCROLLEN */
+    .brand-banner {{ 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 15px; /* Iets minder gat */
+        padding: 15px 0; /* Veel minder padding boven en onder */
+        border-bottom: 1px solid rgba(252, 211, 77, 0.1); 
+        margin-bottom: 15px; /* Minder marge onder de banner */
+    }}
+    .brand-logo {{ 
+        width: 60px; /* Kleiner logo (was 90px) */
+        height: 60px; /* Kleiner logo */
+        border-radius: 12px; /* Iets subtielere hoeken */
+        border: 2px solid #fcd34d; 
+        box-shadow: 0 0 20px rgba(252, 211, 77, 0.2); 
+        object-fit: cover;
+    }}
+    .logotype {{ 
+        font-family: 'Playfair Display', serif; 
+        font-size: 2.2rem; /* Iets kleinere tekst */
+        font-weight: 700; 
+        margin: 0;
+    }}
     .logotype span {{ color: #fcd34d; }}
 
-    .glass-card {{ background: rgba(13, 17, 23, 0.8); border: 1px solid rgba(252, 211, 77, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px; }}
-    .label-tag {{ font-family: 'JetBrains Mono', monospace; color: #fcd34d; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 10px; display: block; }}
+    /* ALGEMENE STYLING */
+    .glass-card {{ background: rgba(13, 17, 23, 0.8); border: 1px solid rgba(252, 211, 77, 0.1); border-radius: 15px; padding: 15px; margin-bottom: 15px; }}
+    .label-tag {{ font-family: 'JetBrains Mono', monospace; color: #fcd34d; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; display: block; }}
     
-    .stButton>button {{ width: 100%; background: #fcd34d; color: #010409; font-weight: 800; border-radius: 12px; padding: 18px; transition: 0.3s; border: none; }}
-    .stButton>button:hover {{ box-shadow: 0 0 40px rgba(252, 211, 77, 0.5); transform: translateY(-2px); }}
+    .stButton>button {{ width: 100%; background: #fcd34d; color: #010409; font-weight: 800; border-radius: 10px; padding: 12px; transition: 0.3s; border: none; }}
+    .stButton>button:hover {{ box-shadow: 0 0 30px rgba(252, 211, 77, 0.5); transform: translateY(-1px); }}
     
     .pick-container {{ 
         background: linear-gradient(135deg, rgba(252, 211, 77, 0.15), #010409); 
-        border: 2px solid #fcd34d; border-radius: 20px; padding: 35px; margin-top: 25px; 
-        box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+        border: 2px solid #fcd34d; border-radius: 15px; padding: 25px; margin-top: 20px; 
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -48,20 +70,19 @@ st.markdown(f"""
 # --- 3. CORE LOGIC ---
 def process_img(file):
     img = Image.open(file).convert('RGB')
-    img.thumbnail((1100, 1100))
+    img.thumbnail((1000, 1000))
     buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=88)
+    img.save(buf, format="JPEG", quality=85)
     return base64.b64encode(buf.getvalue()).decode('utf-8')
 
 if 'rizz_master' not in st.session_state: st.session_state.rizz_master = None
 
 # --- 4. SIDEBAR (The Command Center) ---
 with st.sidebar:
-    st.markdown(f'<div style="text-align:center; margin-bottom:20px;">{logo_img}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="text-align:center; margin-bottom:15px;">{logo_img}</div>', unsafe_allow_html=True)
     st.markdown("<h3 style='color:#fcd34d; text-align:center;'>SYSTEM ACCESS</h3>", unsafe_allow_html=True)
     
-    # Hier vul je de key in
-    user_api_key = st.text_input("OPENAI API KEY", type="password", help="Je key wordt niet opgeslagen op de server.")
+    user_api_key = st.text_input("OPENAI API KEY", type="password", help="Je key wordt niet opgeslagen.")
     
     st.markdown("---")
     platform = st.selectbox("PLATFORM", ["Hinge", "Tinder", "Instagram", "WhatsApp", "Bumble", "Real Life"])
@@ -74,14 +95,14 @@ with st.sidebar:
         st.session_state.rizz_master = None
         st.rerun()
 
-# --- 5. HEADER ---
+# --- 5. HEADER (Kleiner gemaakt) ---
 st.markdown(f'<div class="brand-banner">{logo_img}<div class="logotype">RIZZ<span>ARCHITECT</span></div></div>', unsafe_allow_html=True)
 
 # --- 6. MAIN INTERFACE ---
 if not user_api_key:
     st.warning("⚠️ Voer je OpenAI API Key in de sidebar in om het systeem te activeren.")
 else:
-    c1, c2 = st.columns([1, 1.4], gap="large")
+    c1, c2 = st.columns([1, 1.4], gap="medium")
 
     with c1:
         st.markdown("<div class='label-tag'>Tactical Intake</div>", unsafe_allow_html=True)
@@ -92,31 +113,16 @@ else:
             context = st.text_area("Extra Context", placeholder="Wat is de vibe? Wat wil je bereiken?")
             
             if st.button("⚡ EXECUTE SOVEREIGN SCAN"):
-                with st.spinner("Decoding social engineering patterns..."):
+                with st.spinner("Decoding social dynamics..."):
                     try:
                         client = OpenAI(api_key=user_api_key)
                         b64 = process_img(u_file)
                         
                         sys_msg = f"""
                         Jij bent '⚡ Rizz Architect'. Platform: {platform}. Locaties: {u_city} & {t_city}.
-                        
-                        PROTOCOL:
-                        1. TRIPLE-A: Analyseer screenshot & context ({context}).
-                        2. WEATHER: Geef weersvoorspelling voor {t_city}.
-                        3. VENUES: 3 trendy hotspots in {t_city} (1x drinken, 1x diner, 1x activiteit).
-                        4. OUTFIT: Adviseer de perfecte 'Armor' voor dit weer en deze steden.
-                        5. OPTIONS: 3 zinnen (Playful, Velvet, Pattern Interrupt).
-                        
-                        OUTPUT (JSON):
-                        {{
-                          "analysis": {{"investment": "...", "status": "...", "anomaly": "..."}},
-                          "weather": "...",
-                          "venues": [{{"naam": "...", "type": "...", "waarom": "..."}}],
-                          "outfit": "...",
-                          "options": [{{"type": "...", "zin": "...", "psych": "..."}}],
-                          "architect_pick": {{"choice": 1, "reason": "..."}}
-                        }}
-                        WETTEN: Max 20 woorden per zin. Wees specifiek over {t_city}.
+                        Protocol: Triple-A (App, Atmosphere, Anomaly), Weather, Venues (3x in {t_city}), Outfit.
+                        Zinnen: Playful, Velvet, Pattern Interrupt.
+                        Wetten: Max 20 words. Max 1 emoji. Focus op status.
                         """
                         res = client.chat.completions.create(
                             model="gpt-4o-mini", response_format={"type": "json_object"},
@@ -151,8 +157,8 @@ else:
             st.markdown(f"""
                 <div class="pick-container">
                     <div class="label-tag">🏆 THE ARCHITECT'S PICK</div>
-                    <h2 style="margin:0; color:#fff; line-height:1.2;">"{best.get('zin')}"</h2>
-                    <p style="font-size:0.9rem; color:#fcd34d; margin-top:20px;"><b>STRATEGIE:</b> {p.get('reason')}</p>
+                    <h2 style="margin:0; color:#fff; line-height:1.2; font-size:1.8rem;">"{best.get('zin')}"</h2>
+                    <p style="font-size:0.85rem; color:#fcd34d; margin-top:15px;"><b>STRATEGIE:</b> {p.get('reason')}</p>
                 </div>
             """, unsafe_allow_html=True)
         else:
