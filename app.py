@@ -18,7 +18,7 @@ def get_base64(bin_file):
 logo_b64 = get_base64("Gemini_Generated_Image_ch8eerch8eerch8e.jpg")
 logo_img = f'<img src="data:image/jpeg;base64,{logo_b64}" class="brand-logo">' if logo_b64 else '<div class="brand-logo-fallback">⚔️</div>'
 
-# --- 2. ENHANCED CSS (Soft Edges & Sovereign Styling) ---
+# --- 2. FINAL CLEAN CSS (Soft Edges & Selectbox Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&family=Playfair+Display:wght@700&display=swap');
@@ -26,14 +26,16 @@ st.markdown(f"""
     .stApp {{ background-color: #010409 !important; color: #e2e8f0 !important; font-family: 'Space Grotesk', sans-serif; }}
     [data-testid="stSidebar"] {{ background-color: #0d1117 !important; border-right: 1px solid rgba(252, 211, 77, 0.1); }}
     
-    /* Soft Edges for Tabs */
-    .stTabs [data-baseweb="tab"] {{
-        background-color: #0d1117; border: 1px solid rgba(252, 211, 77, 0.1);
-        color: #e2e8f0 !important; border-radius: 12px 12px 0 0; padding: 10px 20px;
+    /* Clean Selectbox / Dropdown Fix */
+    div[data-baseweb="select"] > div {{
+        background-color: #0d1117 !important;
+        border-radius: 15px !important;
+        border: 1px solid rgba(252, 211, 77, 0.3) !important;
+        color: white !important;
     }}
-    .stTabs [data-baseweb="tab"][aria-selected="true"] {{
-        background-color: #fcd34d !important; color: #010409 !important; font-weight: 700; border-radius: 12px 12px 0 0;
-    }}
+    
+    /* Remove any red error-like warnings in dropdowns */
+    div[data-testid="stMarkdownContainer"] p {{ margin-bottom: 0px !important; }}
 
     .brand-banner {{ display: flex; align-items: center; justify-content: center; gap: 15px; padding: 10px 0; border-bottom: 1px solid rgba(252, 211, 77, 0.15); margin-bottom: 15px; }}
     .brand-logo {{ width: 55px; height: 55px; border-radius: 12px; border: 2px solid #fcd34d; box-shadow: 0 0 15px rgba(252, 211, 77, 0.1); object-fit: cover; }}
@@ -43,18 +45,18 @@ st.markdown(f"""
     .glass-card {{ background: rgba(30, 41, 59, 0.3) !important; border: 1px solid rgba(252, 211, 77, 0.1) !important; border-radius: 18px; padding: 18px; margin-bottom: 15px; }}
     .label-tag {{ font-family: 'JetBrains Mono', monospace; color: #fcd34d !important; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }}
     
-    /* Soft Edges for Inputs & Selectboxes */
-    input, textarea, [data-baseweb="select"], .stNumberInput input, .stTextInput input {{ 
+    /* Soft Edges & Clean Inputs */
+    input, textarea, .stTextInput input {{ 
         background-color: #0d1117 !important; 
         color: white !important; 
         border: 1px solid rgba(252, 211, 77, 0.2) !important; 
-        border-radius: 12px !important; /* Soft Edges */
+        border-radius: 15px !important; 
         padding: 10px !important;
     }}
     
-    .stButton>button {{ width: 100%; background: #fcd34d !important; color: #010409 !important; font-weight: 800; border-radius: 12px; padding: 10px; border: none !important; text-transform: uppercase; }}
+    .stButton>button {{ width: 100%; background: #fcd34d !important; color: #010409 !important; font-weight: 800; border-radius: 15px; padding: 10px; border: none !important; text-transform: uppercase; }}
+    .stTabs [data-baseweb="tab"] {{ border-radius: 12px 12px 0 0 !important; color: #e2e8f0 !important; }}
     .pick-container {{ background: linear-gradient(135deg, rgba(252, 211, 77, 0.1), #010409) !important; border: 2px solid #fcd34d !important; border-radius: 20px; padding: 25px; margin-top: 20px; }}
-    h1, h2, h3, p, label, .stMarkdown {{ color: #e2e8f0 !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -64,7 +66,7 @@ lang = "NL" if lang_choice == "🇳🇱" else "EN"
 
 texts = {
     "NL": {
-        "access": "SOVEREIGN ACCESS", "key": "OPENAI API KEY", "field_intel": "Field Intelligence",
+        "access": "SOVEREIGN ACCESS", "key": "OPENAI API KEY", "field_intel": "Field Intel",
         "m_city": "JOUW STAD", "t_city": "HAAR STAD", "reset": "REBOOT SYSTEM",
         "tab_analyze": "🔍 Analyze", "tab_spar": "🥊 Sparring",
         "intake": "Tactical Intake", "context": "Context (Vibe)", "scan": "⚡ EXECUTE SCAN",
@@ -77,7 +79,7 @@ texts = {
         "bot_cold": "Ice Cold", "bot_spicy": "Spicy", "bot_professional": "Professional"
     },
     "EN": {
-        "access": "SOVEREIGN ACCESS", "key": "OPENAI API KEY", "field_intel": "Field Intelligence",
+        "access": "SOVEREIGN ACCESS", "key": "OPENAI API KEY", "field_intel": "Field Intel",
         "m_city": "YOUR CITY", "t_city": "HER CITY", "reset": "REBOOT SYSTEM",
         "tab_analyze": "🔍 Analyze", "tab_spar": "🥊 Sparring",
         "intake": "Tactical Intake", "context": "Context (Vibe)", "scan": "⚡ EXECUTE SCAN",
@@ -185,14 +187,14 @@ else:
                 st.session_state.chat_history.append({"role": "user", "content": pr})
                 with st.chat_message("assistant"):
                     client = OpenAI(api_key=user_api_key)
-                    r = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":f"Dating sim. Lang:{lang}."}]+st.session_state.chat_history)
+                    r = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":f"Dating sim. Lang:{lang}. Archetype: {st.session_state.sim_active}"}]+st.session_state.chat_history)
                     rep = r.choices[0].message.content
                     st.markdown(rep)
                 st.session_state.chat_history.append({"role": "assistant", "content": rep})
             if st.button(t['coach']):
                 with st.spinner(t['coach_wait']):
                     client = OpenAI(api_key=user_api_key)
-                    c_res = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":f"Feedback on social status in {lang}."}]+st.session_state.chat_history)
+                    c_res = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":f"Brief feedback in {lang}."}]+st.session_state.chat_history)
                     st.markdown(f"<div class='glass-card' style='border: 2px solid #fcd34d;'><div class='label-tag'>👨‍🏫 Architect Debrief</div>{c_res.choices[0].message.content}</div>", unsafe_allow_html=True)
             if st.button(t['sim_end']):
                 st.session_state.sim_active = False
