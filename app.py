@@ -18,15 +18,26 @@ def get_base64(bin_file):
 logo_b64 = get_base64("Gemini_Generated_Image_ch8eerch8eerch8e.jpg")
 logo_img = f'<img src="data:image/jpeg;base64,{logo_b64}" class="brand-logo">' if logo_b64 else '<div class="brand-logo-fallback">⚔️</div>'
 
-# --- 2. FINAL CLEAN CSS (Soft Edges & Selectbox Fix) ---
+# --- 2. DARK IMMERSION CSS (Fixes White Header & Light Mode issues) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&family=Playfair+Display:wght@700&display=swap');
     
-    .stApp {{ background-color: #010409 !important; color: #e2e8f0 !important; font-family: 'Space Grotesk', sans-serif; }}
-    [data-testid="stSidebar"] {{ background-color: #0d1117 !important; border-right: 1px solid rgba(252, 211, 77, 0.1); }}
+    /* Forceer de browser achtergrond en header naar zwart */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stToolbar"] {{
+        background-color: #010409 !important;
+        color: #e2e8f0 !important;
+    }}
     
-    /* Clean Selectbox / Dropdown Fix */
+    .stApp {{ background-color: #010409 !important; font-family: 'Space Grotesk', sans-serif; }}
+    
+    /* Sidebar Fix */
+    [data-testid="stSidebar"] {{ 
+        background-color: #0d1117 !important; 
+        border-right: 1px solid rgba(252, 211, 77, 0.1); 
+    }}
+
+    /* Selectbox / Dropdown Styling */
     div[data-baseweb="select"] > div {{
         background-color: #0d1117 !important;
         border-radius: 15px !important;
@@ -34,29 +45,47 @@ st.markdown(f"""
         color: white !important;
     }}
     
-    /* Remove any red error-like warnings in dropdowns */
-    div[data-testid="stMarkdownContainer"] p {{ margin-bottom: 0px !important; }}
-
-    .brand-banner {{ display: flex; align-items: center; justify-content: center; gap: 15px; padding: 10px 0; border-bottom: 1px solid rgba(252, 211, 77, 0.15); margin-bottom: 15px; }}
-    .brand-logo {{ width: 55px; height: 55px; border-radius: 12px; border: 2px solid #fcd34d; box-shadow: 0 0 15px rgba(252, 211, 77, 0.1); object-fit: cover; }}
-    .logotype {{ font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: #e2e8f0 !important; margin: 0; }}
+    /* Header & Branding */
+    .brand-banner {{ 
+        display: flex; align-items: center; justify-content: center; gap: 15px; 
+        padding: 10px 0; border-bottom: 1px solid rgba(252, 211, 77, 0.15); 
+        margin-bottom: 15px; background-color: #010409;
+    }}
+    .brand-logo {{ 
+        width: 55px; height: 55px; border-radius: 12px; 
+        border: 2px solid #fcd34d; box-shadow: 0 0 15px rgba(252, 211, 77, 0.1); 
+        object-fit: cover; 
+    }}
+    .logotype {{ 
+        font-family: 'Playfair Display', serif; font-size: 2rem; 
+        font-weight: 700; color: #e2e8f0 !important; margin: 0; 
+    }}
     .logotype span {{ color: #fcd34d !important; }}
 
-    .glass-card {{ background: rgba(30, 41, 59, 0.3) !important; border: 1px solid rgba(252, 211, 77, 0.1) !important; border-radius: 18px; padding: 18px; margin-bottom: 15px; }}
-    .label-tag {{ font-family: 'JetBrains Mono', monospace; color: #fcd34d !important; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }}
-    
-    /* Soft Edges & Clean Inputs */
-    input, textarea, .stTextInput input {{ 
+    /* Inputs & Soft Edges */
+    input, textarea, .stTextInput input, [data-baseweb="base-input"] {{ 
         background-color: #0d1117 !important; 
         color: white !important; 
         border: 1px solid rgba(252, 211, 77, 0.2) !important; 
         border-radius: 15px !important; 
-        padding: 10px !important;
     }}
-    
-    .stButton>button {{ width: 100%; background: #fcd34d !important; color: #010409 !important; font-weight: 800; border-radius: 15px; padding: 10px; border: none !important; text-transform: uppercase; }}
-    .stTabs [data-baseweb="tab"] {{ border-radius: 12px 12px 0 0 !important; color: #e2e8f0 !important; }}
-    .pick-container {{ background: linear-gradient(135deg, rgba(252, 211, 77, 0.1), #010409) !important; border: 2px solid #fcd34d !important; border-radius: 20px; padding: 25px; margin-top: 20px; }}
+
+    /* Tabs Fix */
+    .stTabs [data-baseweb="tab"] {{
+        color: #e2e8f0 !important;
+        background-color: transparent !important;
+    }}
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {{
+        background-color: #fcd34d !important;
+        color: #010409 !important;
+        border-radius: 10px 10px 0 0 !important;
+    }}
+
+    /* General cleanup */
+    .stMarkdown p, label {{ color: #e2e8f0 !important; }}
+    .glass-card {{ background: rgba(30, 41, 59, 0.3) !important; border: 1px solid rgba(252, 211, 77, 0.1) !important; border-radius: 18px; padding: 18px; }}
+    .stButton>button {{ width: 100%; background: #fcd34d !important; color: #010409 !important; font-weight: 800; border-radius: 15px; padding: 10px; border: none !important; }}
+    .pick-container {{ background: linear-gradient(135deg, rgba(252, 211, 77, 0.1), #010409) !important; border: 2px solid #fcd34d !important; border-radius: 20px; padding: 25px; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -187,14 +216,14 @@ else:
                 st.session_state.chat_history.append({"role": "user", "content": pr})
                 with st.chat_message("assistant"):
                     client = OpenAI(api_key=user_api_key)
-                    r = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":f"Dating sim. Lang:{lang}. Archetype: {st.session_state.sim_active}"}]+st.session_state.chat_history)
+                    r = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":f"Dating sim. Lang:{lang}."}]+st.session_state.chat_history)
                     rep = r.choices[0].message.content
                     st.markdown(rep)
                 st.session_state.chat_history.append({"role": "assistant", "content": rep})
             if st.button(t['coach']):
                 with st.spinner(t['coach_wait']):
                     client = OpenAI(api_key=user_api_key)
-                    c_res = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":f"Brief feedback in {lang}."}]+st.session_state.chat_history)
+                    c_res = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":f"Feedback on social status in {lang}."}]+st.session_state.chat_history)
                     st.markdown(f"<div class='glass-card' style='border: 2px solid #fcd34d;'><div class='label-tag'>👨‍🏫 Architect Debrief</div>{c_res.choices[0].message.content}</div>", unsafe_allow_html=True)
             if st.button(t['sim_end']):
                 st.session_state.sim_active = False
