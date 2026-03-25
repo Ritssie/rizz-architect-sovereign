@@ -19,45 +19,27 @@ def get_base64(bin_file):
 logo_b64 = get_base64("Gemini_Generated_Image_ch8eerch8eerch8e.jpg")
 logo_img = f'<img src="data:image/jpeg;base64,{logo_b64}" class="brand-logo">' if logo_b64 else '<div class="brand-logo-fallback">⚡</div>'
 
-# --- 2. BRUTE FORCE CSS (The Executioner Theme) ---
+# --- 2. BRUTE FORCE CSS ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&family=Playfair+Display:wght@700&display=swap');
     
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stToolbar"] {{
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
         background-color: #010409 !important;
         color: #e2e8f0 !important;
     }}
 
-    header[data-testid="stHeader"] {{ background: #010409 !important; }}
-
-    input, textarea, [data-baseweb="base-input"], [data-baseweb="select"] {{
+    input, textarea, [data-baseweb="base-input"] {{
         background-color: #0d1117 !important;
         color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
     }}
 
-    .brand-banner {{ 
-        display: flex; align-items: center; justify-content: center; gap: 15px; 
-        padding: 10px 0; border-bottom: 1px solid rgba(252, 211, 77, 0.2); 
-        margin-bottom: 15px; 
-    }}
-    .brand-logo {{ 
-        width: 55px; height: 55px; border-radius: 12px; 
-        border: 2px solid #fcd34d; box-shadow: 0 0 15px rgba(252, 211, 77, 0.2); 
-        object-fit: cover; 
-    }}
-    .logotype {{ 
-        font-family: 'Playfair Display', serif; font-size: 2rem; 
-        font-weight: 700; color: #e2e8f0 !important; 
-    }}
+    .brand-banner {{ display: flex; align-items: center; justify-content: center; gap: 15px; padding: 10px 0; border-bottom: 1px solid rgba(252, 211, 77, 0.2); margin-bottom: 15px; }}
+    .brand-logo {{ width: 55px; height: 55px; border-radius: 12px; border: 2px solid #fcd34d; object-fit: cover; }}
+    .logotype {{ font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: #e2e8f0 !important; }}
     .logotype span {{ color: #fcd34d !important; }}
 
-    .stButton>button {{ 
-        width: 100%; background: #fcd34d !important; color: #010409 !important; 
-        font-weight: 800; border-radius: 15px; border: none !important; 
-    }}
-    
+    .stButton>button {{ width: 100%; background: #fcd34d !important; color: #010409 !important; font-weight: 800; border-radius: 15px; border: none !important; }}
     .glass-card {{ background: rgba(30, 41, 59, 0.5) !important; border: 1px solid rgba(252, 211, 77, 0.1) !important; border-radius: 18px; padding: 18px; }}
     .pick-container {{ border: 2px solid #fcd34d; border-radius: 20px; padding: 20px; margin-top: 20px; background: rgba(252, 211, 77, 0.05); }}
     .label-tag {{ font-family: 'JetBrains Mono', monospace; color: #fcd34d !important; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; }}
@@ -70,7 +52,7 @@ lang = "NL" if lang_choice == "🇳🇱" else "EN"
 
 texts = {
     "NL": {
-        "access": "SOVEREIGN ACCESS", "key": "GROK (xAI) API KEY", "field_intel": "Field Intel",
+        "access": "SOVEREIGN ACCESS", "key": "xAI API KEY", "field_intel": "Field Intel",
         "m_city": "JOUW STAD", "t_city": "HAAR STAD", "reset": "REBOOT SYSTEM",
         "tab_analyze": "🔍 Analyze", "tab_spar": "🥊 Sparring",
         "intake": "Tactical Intake", "context": "Context (Vibe)", "scan": "⚡ EXECUTE SCAN",
@@ -79,11 +61,10 @@ texts = {
         "warning": "⚠️ Voer je xAI API Key in de sidebar in.", "info": "Wachten op tactische data...",
         "sim_start": "START SIMULATION", "sim_end": "TERMINATE",
         "archetype": "Persona Select", "chat_placeholder": "Input message...",
-        "coach": "👨‍🏫 DEBRIEF BY ARCHITECT", "coach_wait": "Reviewing performance...",
-        "bot_cold": "Ice Cold", "bot_spicy": "Spicy", "bot_professional": "Professional"
+        "coach": "👨‍🏫 DEBRIEF BY ARCHITECT", "coach_wait": "Reviewing performance..."
     },
     "EN": {
-        "access": "SOVEREIGN ACCESS", "key": "GROK (xAI) API KEY", "field_intel": "Field Intel",
+        "access": "SOVEREIGN ACCESS", "key": "xAI API KEY", "field_intel": "Field Intel",
         "m_city": "YOUR CITY", "t_city": "HER CITY", "reset": "REBOOT SYSTEM",
         "tab_analyze": "🔍 Analyze", "tab_spar": "🥊 Sparring",
         "intake": "Tactical Intake", "context": "Context (Vibe)", "scan": "⚡ EXECUTE SCAN",
@@ -92,8 +73,7 @@ texts = {
         "warning": "⚠️ Enter your xAI API Key in the sidebar.", "info": "Waiting for tactical data...",
         "sim_start": "START SIMULATION", "sim_end": "TERMINATE",
         "archetype": "Persona Select", "chat_placeholder": "Input message...",
-        "coach": "👨‍🏫 DEBRIEF BY ARCHITECT", "coach_wait": "Reviewing performance...",
-        "bot_cold": "Ice Cold", "bot_spicy": "Spicy", "bot_professional": "Professional"
+        "coach": "👨‍🏫 DEBRIEF BY ARCHITECT", "coach_wait": "Reviewing performance..."
     }
 }
 t = texts[lang]
@@ -102,12 +82,11 @@ if 'rizz_master' not in st.session_state: st.session_state.rizz_master = None
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 if 'sim_active' not in st.session_state: st.session_state.sim_active = False
 
-# --- 4. CORE LOGIC ---
 def process_img(file):
     img = Image.open(file).convert('RGB')
-    img.thumbnail((1000, 1000))
+    img.thumbnail((800, 800)) # Iets kleiner voor snellere API upload
     buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=85)
+    img.save(buf, format="JPEG", quality=80)
     return base64.b64encode(buf.getvalue()).decode('utf-8')
 
 # --- 5. SIDEBAR ---
@@ -117,13 +96,10 @@ with st.sidebar:
     user_api_key = st.text_input(t['key'], type="password")
     st.markdown("---")
     platform = st.selectbox("PLATFORM", ["Hinge", "Tinder", "Instagram", "WhatsApp", "Bumble", "Real Life"])
-    st.markdown(f"<div class='label-tag'>{t['field_intel']}</div>", unsafe_allow_html=True)
     u_city = st.text_input(t['m_city'], placeholder="e.g. Amsterdam")
     t_city = st.text_input(t['t_city'], placeholder="e.g. Utrecht")
     if st.button(t['reset']):
-        st.session_state.rizz_master = None
-        st.session_state.chat_history = []
-        st.session_state.sim_active = False
+        for key in st.session_state.keys(): del st.session_state[key]
         st.rerun()
 
 # --- 6. HEADER ---
@@ -146,44 +122,33 @@ else:
                 if st.button(t['scan']):
                     with st.spinner(t['wait']):
                         try:
-                            # Gebruik xAI (Grok) API
+                            # FIX: Stabiele xAI Base URL en Modelnaam
                             client = OpenAI(api_key=user_api_key, base_url="https://api.x.ai/v1")
                             b64 = process_img(u_file)
                             
                             sys_msg = f"""
                             Jij bent '⚡ Rizz Architect Ultra 3.0: The Executioner Edition'. 
                             Taal: {lang}. Platform: {platform}. Locaties: {u_city}/{t_city}.
+                            
+                            Analyseer via het Triple-A Protocol (App, Atmosphere, Anomaly).
+                            Wetten: Max 20 woorden per optie. Max 1 emoji. Geen clichés.
 
-                            🔍 HET TRIPLE-A ANALYSE PROTOCOL:
-                            1. App-Awareness: Gebruik etiquette van {platform}.
-                            2. Atmosphere & Investment: Analyseer de reactie-gap en wie de overhand heeft.
-                            3. Anomaly Detection: Vind de unieke 'hook' voor {platform}.
-
-                            📜 DE IJZEREN WETTEN:
-                            - Anti-Generiek: Absoluut geen clichés of saaie openers.
-                            - Mobiele Esthetiek: Elke optie is max. 20 woorden.
-                            - Emoji-Discipline: Maximaal 1 emoji per optie.
-                            - Frame: Behoud altijd een hoge status en 'frame'.
-
-                            OUTPUT FORMAT (JSON):
+                            Output strikt in JSON:
                             {{
-                              "weather": "Korte weer update",
-                              "outfit": "Geadviseerde armor (outfit)",
-                              "venues": [{{"naam": "Naam", "type": "Bar/Park"}}],
+                              "weather": "string",
+                              "outfit": "string",
+                              "venues": [{{"naam": "string", "type": "string"}}],
                               "options": [
-                                {{"type": "Playful Provocateur", "zin": "tekst"}},
-                                {{"type": "Velvet Charmer", "zin": "tekst"}},
-                                {{"type": "Pattern Interrupt", "zin": "tekst"}}
+                                {{"type": "Playful Provocateur", "zin": "string"}},
+                                {{"type": "Velvet Charmer", "zin": "string"}},
+                                {{"type": "Pattern Interrupt", "zin": "string"}}
                               ],
-                              "architect_pick": {{
-                                "choice": 1,
-                                "reason": "Waarom deze optie de conversie maximaliseert."
-                              }}
+                              "architect_pick": {{"choice": 1, "reason": "string"}}
                             }}
                             """
 
                             res = client.chat.completions.create(
-                                model="grok-2-vision-1212",
+                                model="grok-vision-beta", # STABIELE VISION NAAM
                                 response_format={"type": "json_object"},
                                 messages=[
                                     {"role": "system", "content": sys_msg},
@@ -212,12 +177,13 @@ else:
                 
                 p = data.get('architect_pick', {})
                 idx = max(0, min(int(p.get('choice', 1)) - 1, 2))
-                best = data.get('options', [{}, {}, {}])[idx]
+                options = data.get('options', [{}, {}, {}])
+                best = options[idx] if idx < len(options) else {"zin": "Fout bij laden", "type": "Onbekend"}
                 
                 st.markdown(f"""
                     <div class="pick-container">
                         <div class='label-tag'>{t['pick']}</div>
-                        <h2 style="margin:0; color:#fff; font-size:1.8rem;">"{best.get('zin')}"</h2>
+                        <h2 style="margin:0; color:#fff; font-size:1.6rem;">"{best.get('zin')}"</h2>
                         <p style="font-size:0.85rem; color:#fcd34d; margin-top:15px;">
                             <b>{t['strategy']} ({best.get('type')}):</b> {p.get('reason')}
                         </p>
@@ -227,9 +193,7 @@ else:
                 st.info(t['info'])
 
     with tab2:
-        st.markdown(f"<div class='label-tag'>{t['tab_spar']}</div>", unsafe_allow_html=True)
         if not st.session_state.sim_active:
-            arc = st.selectbox(t['archetype'], [t['bot_spicy'], t['bot_cold'], t['bot_professional']])
             if st.button(t['sim_start']):
                 st.session_state.sim_active = True
                 st.session_state.chat_history = [{"role": "assistant", "content": "Hey."}]
@@ -243,25 +207,14 @@ else:
                 with st.chat_message("assistant"):
                     client = OpenAI(api_key=user_api_key, base_url="https://api.x.ai/v1")
                     r = client.chat.completions.create(
-                        model="grok-beta", 
-                        messages=[{"role":"system","content":f"Dating simulation. Je bent een {arc} match op {platform}. Taal:{lang}. Wees realistisch en uitdagend."}] + st.session_state.chat_history
+                        model="grok-beta", # STABIELE CHAT NAAM
+                        messages=[{"role":"system","content":f"Dating sim op {platform}. Wees uitdagend. Taal:{lang}."}] + st.session_state.chat_history
                     )
                     rep = r.choices[0].message.content
                     st.markdown(rep)
-                st.session_state.chat_history.append({"role": "assistant", "content": rep})
+                    st.session_state.chat_history.append({"role": "assistant", "content": rep})
             
-            col_a, col_b = st.columns(2)
-            with col_a:
-                if st.button(t['coach']):
-                    with st.spinner(t['coach_wait']):
-                        client = OpenAI(api_key=user_api_key, base_url="https://api.x.ai/v1")
-                        c_res = client.chat.completions.create(
-                            model="grok-beta", 
-                            messages=[{"role":"system","content":f"Jij bent de Rizz Architect. Analyseer dit chatverloop en geef korte, harde feedback in {lang}."}] + st.session_state.chat_history
-                        )
-                        st.markdown(f"<div class='glass-card' style='border: 2px solid #fcd34d;'><div class='label-tag'>👨‍🏫 Architect Debrief</div>{c_res.choices[0].message.content}</div>", unsafe_allow_html=True)
-            with col_b:
-                if st.button(t['sim_end']):
-                    st.session_state.sim_active = False
-                    st.session_state.chat_history = []
-                    st.rerun()
+            if st.button(t['sim_end']):
+                st.session_state.sim_active = False
+                st.session_state.chat_history = []
+                st.rerun()
