@@ -114,7 +114,7 @@ else:
             st.markdown(f"<div class='label-tag'>{t['intake']}</div>", unsafe_allow_html=True)
             u_file = st.file_uploader("Screenshot", type=['png', 'jpg', 'jpeg'], label_visibility="collapsed")
             if u_file:
-                st.image(u_file, use_container_width=True)
+                st.image(u_file, width='stretch') # FIX: Streamlit 2026 update
                 context = st.text_area(t['context'], placeholder="Describe the energy...")
                 if st.button(t['scan_btn']):
                     with st.spinner(t['wait']):
@@ -125,9 +125,9 @@ else:
                                 model="grok-4.20-0309-non-reasoning", 
                                 response_format={"type": "json_object"},
                                 messages=[
-                                    {"role": "system", "content": f"Identity: Rizz Architect Ultra 4.0. Mission: Analyze {platform}. Laws: Max 20 words. Output: JSON."},
+                                    {"role": "system", "content": f"Identity: Rizz Architect Ultra 4.0. Output ONLY JSON. Structure: {{'weather': '', 'outfit': '', 'options': [{{'type': '', 'zin': ''}}], 'architect_pick': {{'choice': 1, 'reason': ''}}}}"},
                                     {"role": "user", "content": [
-                                        {"type": "text", "text": f"Context: {context}. Return JSON: weather, outfit, venues, options, architect_pick."},
+                                        {"type": "text", "text": f"Platform: {platform}. Context: {context}."},
                                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
                                     ]}
                                 ]
@@ -141,31 +141,30 @@ else:
                 st.markdown(f"<div class='label-tag'>{t['report']}</div>", unsafe_allow_html=True)
                 st.markdown(f'<div class="glass-card"><b>{t["weather"]}</b> {data.get("weather", "N/A")}<br><b>{t["armor"]}</b> {data.get("outfit", "N/A")}</div>', unsafe_allow_html=True)
                 
-                # --- LOGICA SEGURA PARA EVITAR CRASHES ---
                 p = data.get('architect_pick', {})
                 options = data.get('options', [])
                 
                 if options and isinstance(options, list):
                     try:
-                        raw_choice = p.get('choice', 1)
-                        choice_int = int(raw_choice)
-                    except (ValueError, TypeError):
-                        choice_int = 1
+                        choice_int = int(p.get('choice', 1))
+                    except: choice_int = 1
                     
                     idx = max(0, min(choice_int - 1, len(options) - 1))
                     best = options[idx]
                     
+                    # --- EXTRA CHECK: Is 'best' een dictionary of een string? ---
+                    display_zin = best.get('zin', '...') if isinstance(best, dict) else str(best)
+                    display_type = best.get('type', 'Strategy') if isinstance(best, dict) else 'Executioner'
+
                     st.markdown(f"""
                         <div class="pick-container">
                             <div class='label-tag'>{t['pick']}</div>
-                            <h1 style="margin:0; color:#ffffff; font-size:1.8rem;">"{best.get('zin', '...')}"</h1>
+                            <h1 style="margin:0; color:#ffffff; font-size:1.8rem;">"{display_zin}"</h1>
                             <div style="margin-top:15px; color:#fcd34d; font-size:0.85rem;">
-                                <b>{t['strategy']} ({best.get('type', 'Strategie')}):</b> {p.get('reason', 'Architect reason hidden.')}
+                                <b>{t['strategy']} ({display_type}):</b> {p.get('reason', 'Analyzed by Grok-4.')}
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-                else:
-                    st.info("AI did not return valid options. Try again.")
             else:
                 st.info(t['info'])
 
@@ -185,7 +184,7 @@ else:
                     client = OpenAI(api_key=user_api_key, base_url="https://api.x.ai/v1")
                     r = client.chat.completions.create(
                         model="grok-4-1-fast-non-reasoning", 
-                        messages=[{"role":"system","content":"Dating sim match. Be challenging and realistic."}] + st.session_state.chat_history
+                        messages=[{"role":"system","content":"Dating sim match. Be challenging."}] + st.session_state.chat_history
                     )
                     rep = r.choices[0].message.content
                     st.markdown(rep)
