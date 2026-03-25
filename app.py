@@ -4,6 +4,7 @@ from PIL import Image
 import base64
 import io
 import json
+import re
 
 # --- 1. CONFIG & SETUP ---
 st.set_page_config(page_title="Rizz Architect Ultra 4.0", page_icon="⚡", layout="wide")
@@ -14,6 +15,7 @@ def get_base64(bin_file):
             return base64.b64encode(f.read()).decode()
     except: return None
 
+# Zorg dat dit bestand in je repo staat, anders pakt hij de fallback
 logo_b64 = get_base64("Gemini_Generated_Image_ch8eerch8eerch8e.jpg")
 logo_img = f'<img src="data:image/jpeg;base64,{logo_b64}" class="brand-logo">' if logo_b64 else '<div class="brand-logo-fallback">⚡</div>'
 
@@ -34,7 +36,6 @@ st.markdown(f"""
     .glass-card {{ background: rgba(15, 23, 42, 0.8) !important; border: 1px solid rgba(252, 211, 77, 0.2) !important; border-radius: 20px; padding: 20px; }}
     .pick-container {{ border-left: 5px solid #fcd34d; padding: 25px; margin-top: 25px; background: rgba(252, 211, 77, 0.03); border-radius: 0 20px 20px 0; }}
     .label-tag {{ font-family: 'JetBrains Mono', monospace; color: #fcd34d !important; font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }}
-    /* Styling voor de copy-box */
     .stCodeBlock {{ background-color: rgba(252, 211, 77, 0.05) !important; border: 1px dashed #fcd34d !important; }}
     </style>
     """, unsafe_allow_html=True)
@@ -79,9 +80,23 @@ texts = {
 }
 t = texts[lang]
 
-if 'rizz_master' not in st.session_state: st.session_state.rizz_master = None
-if 'chat_history' not in st.session_state: st.session_state.chat_history = []
-if 'sim_active' not in st.session_state: st.session_state.sim_active = False
+# Extra check op session state keys
+for key in ['rizz_master', 'chat_history', 'sim_active']:
+    if key not in st.session_state:
+        if key == 'chat_history': st.session_state[key] = []
+        elif key == 'sim_active': st.session_state[key] = False
+        else: st.session_state[key] = None
+
+# --- 4. CORE HELPERS ---
+def extract_json(text):
+    """Vist de JSON uit de tekst, zelfs als er AI-gebrabbel omheen staat."""
+    try:
+        match = re.search(r'\{.*\}', text, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+        return json.loads(text)
+    except:
+        return None
 
 def process_img(file):
     img = Image.open(file).convert('RGB')
@@ -90,7 +105,7 @@ def process_img(file):
     img.save(buf, format="JPEG", quality=85)
     return base64.b64encode(buf.getvalue()).decode('utf-8')
 
-# --- 4. SIDEBAR ---
+# --- 5. SIDEBAR ---
 with st.sidebar:
     st.markdown(f'<div style="text-align:center;">{logo_img}</div>', unsafe_allow_html=True)
     st.markdown("<h3 style='color:#fcd34d; text-align:center;'>QUANTUM ACCESS</h3>", unsafe_allow_html=True)
@@ -102,10 +117,10 @@ with st.sidebar:
         st.session_state.clear()
         st.rerun()
 
-# --- 5. HEADER ---
+# --- 6. HEADER ---
 st.markdown(f'<div class="brand-banner">{logo_img}<div class="logotype">RIZZ<span>ARCHITECT</span></div></div>', unsafe_allow_html=True)
 
-# --- 6. MAIN INTERFACE ---
+# --- 7. MAIN INTERFACE ---
 if not user_api_key:
     st.warning(t['warning'])
 else:
@@ -128,81 +143,73 @@ else:
                                 model="grok-4.20-0309-non-reasoning", 
                                 response_format={"type": "json_object"},
                                 messages=[
-                                    {"role": "system", "content": f"Identity: Rizz Architect Ultra 4.0. Mission: Analyze {platform}. Platform: {platform}. Context: {context}. Return ONLY JSON. Options must contain 'zin' and 'type'."},
+                                    {"role": "system", "content": "You are Rizz Architect 4.0. Mission: Analyze social data. Output MUST be valid JSON. Fields: weather, outfit, options (list of 3 with 'zin' and 'type'), architect_pick (dict with 'choice' and 'reason')."},
                                     {"role": "user", "content": [
-                                        {"type": "text", "text": "Analyze target. Return JSON: weather, outfit, options (list of 3 with type and zin), architect_pick (dict with choice int and reason)."},
+                                        {"type": "text", "text": f"Platform: {platform}. Context: {context}. Target city: {t_city}."},
                                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
                                     ]}
                                 ]
                             )
-                            st.session_state.rizz_master = json.loads(res.choices[0].message.content)
-                            st.rerun()
-                        except Exception as e: st.error(f"Grok-4 Scan Error: {e}")
+                            parsed_data = extract_json(res.choices[0].message.content)
+                            if parsed_data:
+                                st.session_state.rizz_master = parsed_data
+                                st.rerun()
+                            else:
+                                st.error("AI returned invalid JSON structure.")
+                        except Exception as e: st.error(f"Grok Error: {e}")
+        
         with c2:
             if st.session_state.rizz_master:
                 data = st.session_state.rizz_master
                 st.markdown(f"<div class='label-tag'>{t['report']}</div>", unsafe_allow_html=True)
                 st.markdown(f'<div class="glass-card"><b>{t["weather"]}</b> {data.get("weather", "N/A")}<br><b>{t["armor"]}</b> {data.get("outfit", "N/A")}</div>', unsafe_allow_html=True)
                 
-                # --- SAFE DATA PARSING ---
-                p = data.get('architect_pick', {})
-                if not isinstance(p, dict): p = {"choice": 1, "reason": str(p)}
+                # --- DEFENSIVE DATA EXTRACTION ---
+                raw_pick = data.get('architect_pick', {})
+                p = raw_pick if isinstance(raw_pick, dict) else {"choice": 1, "reason": str(raw_pick)}
                 options = data.get('options', [])
                 
                 if options and isinstance(options, list):
-                    try: choice_int = int(p.get('choice', 1))
-                    except: choice_int = 1
+                    try:
+                        choice_int = int(p.get('choice', 1))
+                    except:
+                        choice_int = 1
                     
                     idx = max(0, min(choice_int - 1, len(options) - 1))
                     best = options[idx]
                     
-                    d_zin = best.get('zin', '...') if isinstance(best, dict) else str(best)
+                    # Safe text extraction
+                    d_zin = best.get('zin', str(best)) if isinstance(best, dict) else str(best)
                     d_type = best.get('type', 'Strategy') if isinstance(best, dict) else 'Executioner'
 
-                    st.markdown(f"""
-                        <div class="pick-container">
-                            <div class='label-tag'>{t['pick']}</div>
-                            <p style="color:#fcd34d; font-size:0.8rem; margin-bottom:5px;">{t['copy_hint']}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # De "Magic Copy" box
+                    st.markdown(f"<div class='pick-container'><div class='label-tag'>{t['pick']}</div><p style='color:#fcd34d; font-size:0.8rem;'>{t['copy_hint']}</p></div>", unsafe_allow_html=True)
                     st.code(d_zin, language=None)
-                    
-                    st.markdown(f"""
-                        <div style="padding: 0 25px;">
-                            <div style="margin-top:10px; color:#94a3b8; font-size:0.85rem;">
-                                <b>{t['strategy']} ({d_type}):</b> {p.get('reason', 'Analyzed by Grok-4.')}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.info("System refresh required. Data structure mismatch.")
+                    st.markdown(f"<div style='padding:0 25px; color:#94a3b8; font-size:0.85rem;'><b>{t['strategy']} ({d_type}):</b> {p.get('reason', 'Analyzed.')}</div>", unsafe_allow_html=True)
             else:
                 st.info(t['info'])
 
     with tab2:
         st.markdown("<div class='label-tag'>Combat Simulator</div>", unsafe_allow_html=True)
-        if not st.session_state.get('sim_active', False):
+        if not st.session_state.sim_active:
             if st.button("START NEURAL SIMULATION"):
                 st.session_state.sim_active = True
-                st.session_state.chat_history = [{"role": "assistant", "content": "Hey. What's the move?"}]
+                st.session_state.chat_history = [{"role": "assistant", "content": "Ready. What's the target situation?"}]
                 st.rerun()
         else:
             for m in st.session_state.chat_history:
                 with st.chat_message(m["role"]): st.markdown(m["content"])
-            if pr := st.chat_input("Input command..."):
+            if pr := st.chat_input("Command..."):
                 st.session_state.chat_history.append({"role": "user", "content": pr})
                 with st.chat_message("assistant"):
                     client = OpenAI(api_key=user_api_key, base_url="https://api.x.ai/v1")
                     r = client.chat.completions.create(
                         model="grok-4-1-fast-non-reasoning", 
-                        messages=[{"role":"system","content":"Dating sim match. Be challenging."}] + st.session_state.chat_history
+                        messages=[{"role":"system","content":"Dating sparring mode. Hard mode."}] + st.session_state.chat_history
                     )
                     rep = r.choices[0].message.content
                     st.markdown(rep)
                     st.session_state.chat_history.append({"role": "assistant", "content": rep})
-            if st.button("TERMINATE SESSION"):
+            if st.button("TERMINATE"):
                 st.session_state.sim_active = False
                 st.session_state.chat_history = []
                 st.rerun()
