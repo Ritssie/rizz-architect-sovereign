@@ -9,15 +9,12 @@ import json
 # --- 1. CORE SYSTEM CONFIGURATION ---
 # ==============================================================================
 st.set_page_config(
-    page_title="Rizz Architect Sovereign v13.6", 
+    page_title="Rizz Architect Sovereign v13.8", 
     page_icon="👑", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ==============================================================================
-# --- 2. ARCHETYPE & STYLE ENGINE ---
-# ==============================================================================
 def clean_type(t):
     t_low = t.lower() if t else ""
     if any(x in t_low for x in ["provocateur", "energy", "playful"]): return "Playful Provocateur"
@@ -26,7 +23,7 @@ def clean_type(t):
     return "Strategic Move"
 
 # ==============================================================================
-# --- 3. MULTI-LANGUAGE DICTIONARY (Hersteld & Uitgebreid) ---
+# --- 2. MULTI-LANGUAGE DICTIONARY ---
 # ==============================================================================
 translations = {
     "NL": {
@@ -70,7 +67,7 @@ translations = {
 }
 
 # ==============================================================================
-# --- 4. SOVEREIGN UI CSS (Grid & Depth) ---
+# --- 3. SOVEREIGN UI CSS ---
 # ==============================================================================
 st.markdown("""
     <style>
@@ -120,7 +117,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# --- 5. ENGINE CORE ---
+# --- 4. ENGINE CORE (FIXED) ---
 # ==============================================================================
 def process_img(file):
     img = Image.open(file).convert('RGB')
@@ -134,7 +131,7 @@ def get_analysis(client, b64, ctx, lang):
     Analyze the screenshot with extreme precision.
     1. Identify hidden subtext and power dynamics.
     2. Provide 3 distinct options: Playful Provocateur, Velvet Charmer, Pattern Interrupt.
-    3. For EACH option, explain the 'Social Engineering' behind it (why it works, what it triggers).
+    3. For EACH option, explain the 'Social Engineering' behind it.
     Return JSON: 
     {{
       "success_rate": int,
@@ -147,16 +144,18 @@ def get_analysis(client, b64, ctx, lang):
     }}"""
     try:
         res = client.chat.completions.create(
-            model="grok-2-vision-latest",
+            model="grok-2-vision-latest", 
             response_format={"type": "json_object"},
             messages=[{"role": "system", "content": prompt},
                       {"role": "user", "content": [{"type": "text", "text": f"Context: {ctx}"}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}]}]
         )
         return json.loads(res.choices[0].message.content)
-    except: return None
+    except Exception as e:
+        st.error(f"ENGINE ERROR: {str(e)}") # Nu zie je wat er misgaat!
+        return None
 
 # ==============================================================================
-# --- 6. INTERFACE ASSEMBLY ---
+# --- 5. INTERFACE ASSEMBLY ---
 # ==============================================================================
 if 'state' not in st.session_state: st.session_state.state = None
 
@@ -167,13 +166,12 @@ with st.sidebar:
     t = translations[lang_choice]
     
     api_key = st.text_input("Grok API Key", type="password")
-    is_dark = st.toggle(t["dark_mode"])
     
     with st.expander(f"⚖️ {t['legal_title']}"):
         st.markdown(f'<div style="font-size:0.65rem; color:#64748b; line-height:1.4;">{t["legal_text"]}</div>', unsafe_allow_html=True)
     
     st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
-    if st.button(t["reboot"], use_container_width=True):
+    if st.button(t["reboot"], width='stretch'):
         st.session_state.clear(); st.rerun()
 
 st.markdown(f'<div class="brand-container"><div class="brand-logo">{t["header"]}</div></div>', unsafe_allow_html=True)
@@ -187,19 +185,25 @@ else:
         st.markdown(f"<div class='section-header'>{t['tag_intake']}</div>", unsafe_allow_html=True)
         u_file = st.file_uploader(t["upload_label"], type=['png','jpg','jpeg'], label_visibility="collapsed")
         if u_file:
-            st.image(u_file, use_container_width=True)
+            st.image(u_file, width='stretch')
             u_ctx = st.text_area("Live Context", placeholder=t["ctx_ph"], height=70)
-            if st.button(t["btn_scan"], use_container_width=True):
-                with st.spinner("Analyzing Matrix..."):
-                    client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
-                    st.session_state.state = get_analysis(client, process_img(u_file), u_ctx, lang_choice)
-                    st.rerun()
+            
+            # De Scan actie
+            if st.button(t["btn_scan"], width='stretch'):
+                if u_file and api_key:
+                    with st.spinner("Decoding Social Matrix..."):
+                        client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+                        result = get_analysis(client, process_img(u_file), u_ctx, lang_choice)
+                        if result:
+                            st.session_state.state = result
+                            st.rerun()
+                else:
+                    st.warning("Data source missing.")
 
     with col_r:
         if st.session_state.state:
             s = st.session_state.state
             
-            # SIGNALS
             st.markdown(f"<div class='section-header'>{t['tag_signals']}</div>", unsafe_allow_html=True)
             sc1, sc2 = st.columns(2)
             with sc1:
@@ -207,7 +211,6 @@ else:
             with sc2:
                 for rf in s.get('red_flags', []): st.markdown(f'<div class="pill pill-red">! {rf}</div>', unsafe_allow_html=True)
             
-            # OPTIONS
             st.markdown(f"<div class='section-header'>{t['tag_dims']}</div>", unsafe_allow_html=True)
             for i, opt in enumerate(s.get('options', [])):
                 is_winner = (i == s.get('winner_idx', 0))
@@ -223,10 +226,10 @@ else:
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
-                if st.button(f"{t['copy_btn']} {a_type}", key=f"btn_{i}", use_container_width=True):
+                if st.button(f"{t['copy_btn']} {a_type}", key=f"btn_{i}", width='stretch'):
                     st.write(f'<script>navigator.clipboard.writeText("{opt.get("zin")}")</script>', unsafe_allow_html=True)
                     st.toast(f"{a_type} {t['copied']}")
         else:
             st.info(t["idle_msg"])
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SOVEREIGN ARCHITECT V13.6</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SOVEREIGN ARCHITECT V13.8 | ENGINE READY</div>", unsafe_allow_html=True)
