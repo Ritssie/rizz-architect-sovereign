@@ -7,7 +7,7 @@ import json
 
 # --- 1. CORE CONFIGURATION ---
 st.set_page_config(
-    page_title="Rizz Architect Sovereign v6.3", 
+    page_title="Rizz Architect Sovereign v6.3.1", 
     page_icon="👑", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -60,19 +60,16 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Playfair+Display:wght@900&family=Inter:wght@300;400;600;800&display=swap');
     
-    /* Global Styles */
     html, body, [data-testid="stAppViewContainer"] { 
         background-color: #010409 !important; 
         color: #e2e8f0 !important; 
         font-family: 'Inter', sans-serif; 
     }
 
-    /* Branding Header */
     .brand-container { text-align: center; padding: 40px 0 20px 0; }
     .brand-logo { font-family: 'Playfair Display', serif; font-size: 3rem; color: #ffffff !important; letter-spacing: -1px; }
     .brand-logo span { color: #fcd34d !important; text-shadow: 0 0 30px rgba(252, 211, 77, 0.4); }
 
-    /* Section Headers */
     .section-header {
         font-family: 'JetBrains Mono', monospace;
         color: #fcd34d;
@@ -85,17 +82,14 @@ st.markdown("""
     }
     .section-header::after { content: ""; flex: 1; height: 1px; background: rgba(252, 211, 77, 0.15); margin-left: 15px; }
 
-    /* Unified Card System */
     .sovereign-card {
         background: rgba(255, 255, 255, 0.02);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
         padding: 24px;
         margin-bottom: 20px;
-        transition: all 0.3s ease;
     }
     
-    /* Architect's Pick Specific */
     .winner-card {
         background: linear-gradient(165deg, rgba(252, 211, 77, 0.1) 0%, rgba(1, 4, 9, 1) 100%);
         border: 2px solid #fcd34d;
@@ -114,7 +108,6 @@ st.markdown("""
         margin-bottom: 12px;
     }
 
-    /* Danger Card */
     .danger-card {
         background: rgba(239, 68, 68, 0.05);
         border: 1px solid rgba(248, 113, 113, 0.4);
@@ -125,7 +118,12 @@ st.markdown("""
         font-size: 0.85rem;
     }
 
-    /* Buttons & Inputs */
+    /* Fix voor afgeronde hoeken bij afbeeldingen */
+    [data-testid="stImage"] img {
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
     .stButton>button {
         background: #fcd34d !important;
         color: #010409 !important;
@@ -140,7 +138,6 @@ st.markdown("""
     
     .stTextArea textarea { background-color: #0d1117 !important; border: 1px solid rgba(255,255,255,0.1) !important; color: white !important; border-radius: 12px; }
     
-    /* Flag Pills */
     .flag-pill {
         display: inline-block;
         padding: 6px 14px;
@@ -187,7 +184,7 @@ with st.sidebar:
     t = translations[l_key]
     api_key = st.text_input("Grok API Key", type="password")
     st.markdown("---")
-    is_dark = st.toggle(t["dark_mode"], key="dt")
+    is_dark = st.toggle(t["dark_mode"], key="dt_toggle")
     if st.button(t["reboot"]):
         st.session_state.clear()
         st.rerun()
@@ -205,7 +202,7 @@ else:
         u_file = st.file_uploader("Screenshot", type=['png','jpg','jpeg'], label_visibility="collapsed")
         
         if u_file:
-            st.image(u_file, use_container_width=True, styling="border-radius: 12px;")
+            st.image(u_file, use_container_width=True)
             u_ctx = st.text_area("Intelligence Context", placeholder=t["ctx_ph"], height=90, label_visibility="collapsed")
             if st.button(t["btn_scan"]):
                 with st.spinner("Decoding social layers..."):
@@ -227,7 +224,7 @@ else:
             s = st.session_state.state
             
             # Probability Card
-            st.markdown(f"<div class='section-header'>SLAGINGSKANS</div>", unsafe_allow_header=True)
+            st.markdown(f"<div class='section-header'>SLAGINGSKANS</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='sovereign-card' style='padding: 15px 24px;'><div style='font-size:1.5rem; font-weight:800; color:#fcd34d;'>{s.get('success_rate', 50)}%</div></div>", unsafe_allow_html=True)
             
             # Winner Card
@@ -267,4 +264,4 @@ else:
             st.info("System stand-by. Waiting for tactical input.")
 
 # --- 6. FOOTER ---
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE v6.3.2 | POLISHED STABILITY</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE v6.3.1 | STABLE RELEASE</div>", unsafe_allow_html=True)
