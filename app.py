@@ -9,14 +9,29 @@ import json
 # --- 1. CORE SYSTEM CONFIGURATION ---
 # ==============================================================================
 st.set_page_config(
-    page_title="Rizz Architect Sovereign v12.0", 
+    page_title="Rizz Architect Sovereign v12.6", 
     page_icon="👑", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ==============================================================================
-# --- 2. MULTI-LANGUAGE DICTIONARY ---
+# --- 2. UTILITY FUNCTIONS (CLEANER) ---
+# ==============================================================================
+def clean_type(t):
+    """Vertaalt technische AI termen naar de gewenste Archetypes."""
+    if not t: return "Unknown Strategy"
+    t_low = t.lower()
+    if "provocateur" in t_low or "energy" in t_low or "playful" in t_low:
+        return "Playful Provocateur"
+    if "charmer" in t_low or "velvet" in t_low or "leadership" in t_low:
+        return "Velvet Charmer"
+    if "interrupt" in t_low or "pattern" in t_low or "challenger" in t_low:
+        return "Pattern Interrupt"
+    return t # Fallback naar AI term als het echt iets nieuws is
+
+# ==============================================================================
+# --- 3. MULTI-LANGUAGE DICTIONARY ---
 # ==============================================================================
 translations = {
     "NL": {
@@ -32,7 +47,7 @@ translations = {
         "upload_label": "📂 DATA SOURCE (Screenshot)",
         "copy_btn": "KOPIEER",
         "copied": "Gekopieerd!",
-        "strategy_label": "STRATEGIE",
+        "strategy_label": "PSYCHOLOGIE",
         "legal_title": "TERMS & LEGAL SHIELD",
         "legal_text": "<b>1. Geen Garantie:</b> AI biedt suggesties.<br><b>2. Eigen Risico:</b> Jij bent de verzender.<br><b>3. Privacy:</b> Geen gevoelige data.",
         "idle_msg": "Systeem stand-by. Upload screenshot."
@@ -50,15 +65,15 @@ translations = {
         "upload_label": "📂 DATA SOURCE (Screenshot)",
         "copy_btn": "COPY",
         "copied": "Copied!",
-        "strategy_label": "STRATEGY",
+        "strategy_label": "PSYCHOLOGY",
         "legal_title": "TERMS & LEGAL SHIELD",
-        "legal_text": "<b>1. No Guarantee:</b> AI suggestions only.<br><b>2. Liability:</b> User-led messaging.<br><b>3. Privacy:</b> No sensitive data.",
+        "legal_text": "<b>1. No Guarantee:</b> AI suggestions only.<br><b>2. Liability:</b> User-led messaging.",
         "idle_msg": "System on standby. Upload screenshot."
     }
 }
 
 # ==============================================================================
-# --- 3. PREMIUM CSS ENGINE ---
+# --- 4. PREMIUM CSS ENGINE ---
 # ==============================================================================
 st.markdown("""
     <style>
@@ -68,42 +83,37 @@ st.markdown("""
         background-color: #010409 !important; color: #e2e8f0 !important; font-family: 'Inter', sans-serif; 
     }
 
-    .brand-container { text-align: center; padding: 25px 0; }
+    .brand-container { text-align: center; padding: 20px 0; }
     .brand-logo { font-family: 'Playfair Display', serif; font-size: 3rem; color: #ffffff !important; letter-spacing: -2px; }
     .brand-logo span { color: #fcd34d !important; text-shadow: 0 0 20px rgba(252, 211, 77, 0.4); }
 
     .section-header {
         font-family: 'JetBrains Mono', monospace; color: #fcd34d; font-size: 0.7rem;
-        letter-spacing: 3px; margin: 30px 0 15px 0; display: flex; align-items: center;
+        letter-spacing: 3px; margin: 25px 0 12px 0; display: flex; align-items: center;
         text-transform: uppercase; opacity: 0.8;
     }
     .section-header::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(252, 211, 77, 0.3), transparent); margin-left: 15px; }
 
-    /* Kaart Systemen */
     .sovereign-card { 
         background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); 
-        border-radius: 14px; padding: 20px; position: relative; overflow: hidden; margin-bottom: 15px;
+        border-radius: 14px; padding: 20px; position: relative; overflow: hidden; margin-bottom: 12px;
     }
     .winner-card { border: 2px solid #fcd34d; background: linear-gradient(165deg, rgba(252, 211, 77, 0.12) 0%, rgba(1, 4, 9, 1) 100%); }
     .alt-card { border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.03); }
 
-    .success-badge { 
-        position: absolute; top: 15px; right: 15px; padding: 4px 12px; border-radius: 20px; 
-        font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.65rem;
-        background: rgba(0,0,0,0.6); border: 1px solid rgba(252, 211, 77, 0.3); color: #fcd34d;
-    }
+    .archetype-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: #fcd34d; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+    .success-badge { position: absolute; top: 15px; right: 15px; padding: 4px 12px; border-radius: 20px; font-family: 'JetBrains Mono'; font-size: 0.65rem; background: rgba(0,0,0,0.6); border: 1px solid #fcd34d; color: #fcd34d; }
 
-    .pill { padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; margin-bottom: 8px; }
-    .pill-green { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
-    .pill-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .pill { padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; margin-bottom: 8px; border: 1px solid transparent; }
+    .pill-green { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.2); }
+    .pill-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
 
-    .stButton>button { border-radius: 8px !important; font-weight: 700 !important; }
-    [data-testid="stToast"] { background-color: #161b22 !important; color: #fcd34d !important; border: 1px solid #fcd34d !important; }
+    .stButton>button { border-radius: 8px !important; font-weight: 700 !important; transition: 0.2s; }
     </style>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# --- 4. ENGINE CORE ---
+# --- 5. ENGINE CORE ---
 # ==============================================================================
 def process_img(file):
     img = Image.open(file).convert('RGB')
@@ -113,7 +123,13 @@ def process_img(file):
 
 def get_analysis(client, b64, ctx, dark, lang):
     lang_name = "Dutch" if lang == "NL" else "English"
-    prompt = f"Role: Sovereign Architect. Respond ONLY in {lang_name}. Return JSON: success_rate(int), breakdown{{vibe, timing, subtext}}, green_flags[str], red_flags[str], options[{{\"type\": \"str\", \"zin\": \"str\", \"psychology\": \"str\"}}], winner_idx."
+    prompt = f"""Role: Sovereign Architect. Respond ONLY in {lang_name}. 
+    Analyze the screenshot and provide 3 options based on these archetypes:
+    - Playful Provocateur (High Energy, teasing)
+    - Velvet Charmer (Confident leadership, smooth)
+    - Pattern Interrupt (Unexpected, challenging the frame)
+    Return JSON: success_rate(int), green_flags[str], red_flags[str], options[{{\"type\": \"str\", \"zin\": \"str\", \"psychology\": \"str\"}}], winner_idx."""
+    
     try:
         res = client.chat.completions.create(
             model="grok-4.20-0309-non-reasoning",
@@ -125,7 +141,7 @@ def get_analysis(client, b64, ctx, dark, lang):
     except: return None
 
 # ==============================================================================
-# --- 5. INTERFACE ASSEMBLY ---
+# --- 6. INTERFACE ASSEMBLY ---
 # ==============================================================================
 if 'state' not in st.session_state: st.session_state.state = None
 
@@ -136,20 +152,18 @@ with st.sidebar:
     api_key = st.text_input("Grok API Key", type="password")
     is_dark = st.toggle(t["dark_mode"])
     
-    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
     with st.expander(f"⚖️ {t['legal_title']}"):
         st.markdown(f'<div style="font-size:0.65rem; color:#94a3b8; line-height:1.4;">{t["legal_text"]}</div>', unsafe_allow_html=True)
     
-    # Gebalanceerde ruimte naar de reset knop
-    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
     if st.button(t["reboot"], use_container_width=True):
         st.session_state.clear(); st.rerun()
 
 st.markdown(f'<div class="brand-container"><div class="brand-logo">{t["header"]}</div></div>', unsafe_allow_html=True)
 
 if not api_key:
-    st.info("🔐 Voer je API-key in de sidebar in.")
+    st.info("🔐 Voer je API-key in.")
 else:
     col_l, col_r = st.columns([1, 1.2], gap="large")
 
@@ -157,10 +171,10 @@ else:
         st.markdown(f"<div class='section-header'>{t['tag_intake']}</div>", unsafe_allow_html=True)
         u_file = st.file_uploader(t["upload_label"], type=['png','jpg','jpeg'], label_visibility="collapsed")
         if u_file:
-            st.image(u_file, width='stretch')
+            st.image(u_file, use_container_width=True)
             u_ctx = st.text_area("Context", placeholder=t["ctx_ph"], height=80)
             if st.button(t["btn_scan"], use_container_width=True):
-                with st.spinner("Analyzing Architecture..."):
+                with st.spinner("Calculating Strategy..."):
                     client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
                     st.session_state.state = get_analysis(client, process_img(u_file), u_ctx, is_dark, lang_choice)
                     st.rerun()
@@ -169,7 +183,7 @@ else:
         if st.session_state.state:
             s = st.session_state.state
             
-            # --- SIGNALS (Bulletproof Parser) ---
+            # --- SIGNALS ---
             st.markdown(f"<div class='section-header'>{t['tag_signals']}</div>", unsafe_allow_html=True)
             sc1, sc2 = st.columns(2)
             with sc1:
@@ -181,50 +195,45 @@ else:
                     txt = rf if isinstance(rf, str) else rf.get('label', 'Flag')
                     st.markdown(f'<div class="pill pill-red">🚩 {txt}</div>', unsafe_allow_html=True)
             
-            # --- WINNER CARD ---
+            # --- RESULTS ---
             st.markdown(f"<div class='section-header'>{t['tag_pick']}</div>", unsafe_allow_html=True)
             opts = s.get('options', [])
             w_idx = s.get('winner_idx', 0)
             
-            if opts and len(opts) > w_idx:
+            if opts:
+                # Winner Card
                 w = opts[w_idx]
-                zin = w.get('zin') if isinstance(w, dict) else str(w)
-                psych = w.get('psychology', 'Strategy N/A') if isinstance(w, dict) else "N/A"
-                rate = s.get('success_rate', 85)
-
+                w_type = clean_type(w.get('type'))
                 st.markdown(f"""
                     <div class="sovereign-card winner-card">
-                        <div class="success-badge">{rate}% HIT RATE</div>
-                        <div style="font-size:1.3rem; font-weight:800; margin-bottom:15px; padding-right:100px; color:white;">"{zin}"</div>
-                        <div style="font-size:0.85rem; opacity:0.9; border-left: 2px solid #fcd34d; padding-left: 10px;">
-                            <b style="color:#fcd34d;">{t['strategy_label']}:</b> {psych}
+                        <div class="success-badge">{s.get('success_rate', 85)}% HIT RATE</div>
+                        <div class="archetype-label">⭐ {w_type}</div>
+                        <div style="font-size:1.3rem; font-weight:800; margin-bottom:15px; color:white;">"{w.get('zin')}"</div>
+                        <div style="font-size:0.8rem; opacity:0.9; border-left: 2px solid #fcd34d; padding-left: 10px;">
+                            <b style="color:#fcd34d;">{t['strategy_label']}:</b> {w.get('psychology')}
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
-                if st.button(f"✨ {t['copy_btn']} PRIMARY CHOICE", key="cp_w", use_container_width=True):
-                    st.write(f'<script>navigator.clipboard.writeText("{zin}")</script>', unsafe_allow_html=True)
-                    st.toast(t["copied"])
+                if st.button(f"✨ {t['copy_btn']} {w_type}", key="cp_w", use_container_width=True):
+                    st.write(f'<script>navigator.clipboard.writeText("{w.get("zin")}")</script>', unsafe_allow_html=True)
+                    st.toast(f"{w_type} {t['copied']}")
 
-            # --- TACTICAL ARSENAL ---
-            st.markdown(f"<div class='section-header' style='margin-top:40px;'>{t['tag_dims']}</div>", unsafe_allow_html=True)
-            for i, opt in enumerate(opts):
-                if i != w_idx:
-                    if isinstance(opt, dict):
-                        a_zin, a_psych, a_type = opt.get('zin'), opt.get('psychology'), opt.get('type', 'ALT')
-                    else:
-                        a_zin, a_psych, a_type = str(opt), "Alternative Move", "MOVE"
-                        
-                    st.markdown(f"""
-                        <div class="sovereign-card alt-card">
-                            <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:#fcd34d; margin-bottom:8px; opacity:0.7;">{a_type}</div>
-                            <div style="font-weight:600; font-size:1rem; margin-bottom:8px;">"{a_zin}"</div>
-                            <div style="font-size:0.75rem; opacity:0.7; font-style: italic;">{a_psych}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    if st.button(f"{t['copy_btn']} {a_type}", key=f"cp_{i}", use_container_width=True):
-                        st.write(f'<script>navigator.clipboard.writeText("{a_zin}")</script>', unsafe_allow_html=True)
-                        st.toast(t["copied"])
+                # Arsenal Cards
+                st.markdown(f"<div class='section-header' style='margin-top:30px;'>{t['tag_dims']}</div>", unsafe_allow_html=True)
+                for i, opt in enumerate(opts):
+                    if i != w_idx:
+                        a_type = clean_type(opt.get('type'))
+                        st.markdown(f"""
+                            <div class="sovereign-card alt-card">
+                                <div class="archetype-label">{a_type}</div>
+                                <div style="font-weight:600; font-size:1rem; margin-bottom:8px;">"{opt.get('zin')}"</div>
+                                <div style="font-size:0.75rem; opacity:0.7; font-style: italic;">{opt.get('psychology')}</div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        if st.button(f"{t['copy_btn']} {a_type}", key=f"cp_{i}", use_container_width=True):
+                            st.write(f'<script>navigator.clipboard.writeText("{opt.get("zin")}")</script>', unsafe_allow_html=True)
+                            st.toast(f"{a_type} {t['copied']}")
         else:
             st.info(t["idle_msg"])
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE V12.0 | BALANCED UX</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE V12.6 | PERSONA PROTOCOL</div>", unsafe_allow_html=True)
