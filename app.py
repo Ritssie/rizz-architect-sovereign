@@ -104,26 +104,28 @@ def process_img(file):
 
 def get_analysis(client, b64, ctx, lang):
     lang_name = "Dutch" if lang == "NL" else "English"
-    prompt = f"Role: Sovereign Architect. Respond ONLY in {lang_name}. Analyze subtext. Return JSON object with success_rate, green_flags, red_flags, options (type, zin, psychology), and winner_idx."
-    models = ["grok-vision-beta", "grok-2-vision-1212"]
+    # Prompt aangescherpt voor strikte JSON-output
+    prompt = f"Role: Sovereign Architect. Respond ONLY in {lang_name}. Analyze subtext. Return ONLY a valid JSON object with keys: success_rate, green_flags, red_flags, options (list of objects with type, zin, psychology), and winner_idx."
     
-    for m in models:
-        try:
-            res = client.chat.completions.create(
-                model=m,
-                response_format={"type": "json_object"},
-                messages=[{"role": "system", "content": prompt},
-                          {"role": "user", "content": [{"type": "text", "text": f"Context: {ctx}"}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}]}]
-            )
-            return json.loads(res.choices[0].message.content)
-        except Exception as e:
-            if "401" in str(e):
-                st.error("🔑 401: Key Ongeldig of Geen Saldo (Check xAI Billing)")
-                return None
-            if "404" in str(e): continue
-            st.error(f"Error {m}: {str(e)}")
-            return None
-    return None
+    # Gebruik van de meest kostenefficiënte vision-model uit jouw lijst
+    model_to_use = "grok-4-1-fast-non-reasoning"
+    
+    try:
+        res = client.chat.completions.create(
+            model=model_to_use,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": [
+                    {"type": "text", "text": f"Context: {ctx}"}, 
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
+                ]}
+            ]
+        )
+        return json.loads(res.choices[0].message.content)
+    except Exception as e:
+        st.error(f"Systeemfout met {model_to_use}: {str(e)}")
+        return None
 
 # ==============================================================================
 # --- 5. INTERFACE ASSEMBLY ---
@@ -139,21 +141,21 @@ with st.sidebar:
     raw_key = st.text_input("Grok API Key", type="password")
     api_key = raw_key.strip() if raw_key else ""
     
-    if st.button("🔍 TEST CONNECTION", width='stretch'):
+    if st.button("🔍 TEST CONNECTION", use_container_width=True):
         if not api_key: st.warning("Voer eerst een key in.")
         else:
             try:
                 test_client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
                 test_client.models.list()
-                st.success("✅ Connection OK! Key is geldig.")
+                st.success("✅ Verbinding geslaagd!")
             except Exception as e:
-                st.error(f"❌ Connection Failed: {str(e)}")
+                st.error(f"❌ Fout: {str(e)}")
 
     st.markdown("---")
     st.markdown(f"<div style='font-size:0.75rem; font-weight:700; color:#fcd34d;'>{t['legal_title']}</div>", unsafe_allow_html=True)
     st.markdown(f"<div style='font-size:0.7rem; color:#94a3b8;'>{t['legal_text']}</div>", unsafe_allow_html=True)
     
-    if st.button(t["reboot"], width='stretch'):
+    if st.button(t["reboot"], use_container_width=True):
         st.session_state.clear(); st.rerun()
 
 st.markdown(f'<div class="brand-container"><div class="brand-logo">{t["header"]}</div></div>', unsafe_allow_html=True)
@@ -166,9 +168,9 @@ else:
         st.markdown(f"<div class='section-header'>{t['tag_intake']}</div>", unsafe_allow_html=True)
         u_file = st.file_uploader(t["upload_label"], type=['png','jpg','jpeg'], label_visibility="collapsed")
         if u_file:
-            st.image(u_file, width='stretch')
+            st.image(u_file, use_container_width=True)
             u_ctx = st.text_area("Live Context", placeholder=t["ctx_ph"], height=80)
-            if st.button(t["btn_scan"], width='stretch'):
+            if st.button(t["btn_scan"], use_container_width=True):
                 with st.spinner("Decoding Matrix..."):
                     client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
                     result = get_analysis(client, process_img(u_file), u_ctx, lang_choice)
@@ -184,12 +186,19 @@ else:
                 for gf in s.get('green_flags', []): st.markdown(f'<div class="pill pill-green">✓ {gf}</div>', unsafe_allow_html=True)
             with sc2:
                 for rf in s.get('red_flags', []): st.markdown(f'<div class="pill pill-red">! {rf}</div>', unsafe_allow_html=True)
+            
             st.markdown(f"<div class='section-header'>{t['tag_dims']}</div>", unsafe_allow_html=True)
             for i, opt in enumerate(s.get('options', [])):
                 is_winner = (i == s.get('winner_idx', 0))
                 a_type = clean_type(opt.get('type'))
-                st.markdown(f"""<div class="sovereign-card {'winner-card' if is_winner else ''}"><div class="archetype-tag">{"⭐ " if is_winner else ""}{a_type}</div><div style="font-size:1.1rem; font-weight:800; margin-bottom:10px; color:#fff;">"{opt.get('zin')}"</div><div style="font-size:0.75rem; color:#94a3b8;"><b style="color:#fcd34d;">{t['strategy_label']}:</b> {opt.get('psychology')}</div></div>""", unsafe_allow_html=True)
-                if st.button(f"{t['copy_btn']} {a_type}", key=f"btn_{i}", width='stretch'):
-                    st.write(f'<script>navigator.clipboard.writeText("{opt.get("zin")}")</script>', unsafe_allow_html=True)
-                    st.toast(f"{a_type} {t['copied']}")
-        else: st.info(t["idle_msg"])
+                st.markdown(f"""
+                <div class="sovereign-card {'winner-card' if is_winner else ''}">
+                    <div class="archetype-tag">{"⭐ " if is_winner else ""}{a_type}</div>
+                    <div style="font-size:1.1rem; font-weight:800; margin-bottom:10px; color:#fff;">"{opt.get('zin')}"</div>
+                    <div style="font-size:0.75rem; color:#94a3b8;"><b style="color:#fcd34d;">{t['strategy_label']}:</b> {opt.get('psychology')}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                # Gebruik st.code voor makkelijk kopieren zonder JS errors
+                st.code(opt.get('zin'), language=None)
+        else: 
+            st.info(t["idle_msg"])
