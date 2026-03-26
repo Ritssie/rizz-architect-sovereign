@@ -9,7 +9,7 @@ import json
 # --- 1. CORE SYSTEM CONFIGURATION ---
 # ==============================================================================
 st.set_page_config(
-    page_title="RIZZ ARCHITECT SOVEREIGN v12.3", 
+    page_title="RIZZ ARCHITECT SOVEREIGN v12.4", 
     page_icon="👑", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -58,7 +58,7 @@ translations = {
 }
 
 # ==============================================================================
-# --- 3. PREMIUM CSS (ANIMATIONS & MOBILE FIXES) ---
+# --- 3. PREMIUM CSS ---
 # ==============================================================================
 st.markdown("""
     <style>
@@ -68,13 +68,11 @@ st.markdown("""
         background-color: #05070a !important; color: #e2e8f0 !important; font-family: 'Inter', sans-serif; 
     }
 
-    /* API Status Box */
     .status-box { padding: 12px; border-radius: 10px; font-family: 'Orbitron', sans-serif; font-size: 0.65rem; text-align: center; margin-bottom: 20px; letter-spacing: 1px; font-weight: 700; }
     .status-online { background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; color: #4ade80; box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
     .status-offline { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #f87171; box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); animation: blink 1.5s infinite; }
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-    /* Radar Scan Animation */
     .scan-container { position: relative; overflow: hidden; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
     .scan-line {
         position: absolute; width: 100%; height: 3px; background: #fcd34d;
@@ -83,12 +81,10 @@ st.markdown("""
     }
     @keyframes scan { from { top: -5%; } to { top: 105%; } }
 
-    /* Brand Header */
     .brand-container { text-align: center; padding: 30px 0; border-bottom: 1px solid rgba(252, 211, 77, 0.1); margin-bottom: 25px; }
     .brand-logo { font-family: 'Orbitron', sans-serif; font-size: clamp(1.8rem, 8vw, 3rem); color: #fff !important; font-weight: 800; letter-spacing: 3px; }
     .brand-logo span { color: #fcd34d !important; text-shadow: 0 0 20px rgba(252, 211, 77, 0.5); }
 
-    /* Section Headers */
     .section-header {
         font-family: 'Orbitron', sans-serif; color: #fcd34d; font-size: 0.7rem;
         letter-spacing: 3px; margin: 30px 0 15px 0; display: flex; align-items: center;
@@ -96,7 +92,6 @@ st.markdown("""
     }
     .section-header::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(252, 211, 77, 0.3), transparent); margin-left: 15px; }
 
-    /* Winner Card */
     .winner-card { 
         background: linear-gradient(145deg, rgba(252, 211, 77, 0.12) 0%, rgba(1, 4, 9, 0.9) 100%);
         border: 1px solid rgba(252, 211, 77, 0.5); border-radius: 20px; padding: 25px; position: relative;
@@ -108,7 +103,6 @@ st.markdown("""
     }
     .main-text { font-size: clamp(1.2rem, 5vw, 1.7rem); font-weight: 800; color: white; line-height: 1.4; margin-bottom: 20px; }
 
-    /* Progress Bars FIXED */
     .prob-container { margin-top: 25px; display: flex; flex-direction: column; gap: 15px; }
     .prob-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
     .prob-title { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; color: #fcd34d; }
@@ -116,9 +110,8 @@ st.markdown("""
     .prob-bar-bg { background: rgba(255,255,255,0.05); height: 6px; width: 100%; border-radius: 3px; overflow: hidden; }
     .prob-bar-fill { background: linear-gradient(90deg, #fcd34d, #fbbf24); height: 100%; border-radius: 3px; box-shadow: 0 0 10px rgba(252, 211, 77, 0.4); }
 
-    /* Buttons */
     .stButton>button { 
-        width: 100% !important; background: linear-gradient(135deg, #fcd34d 0%, #d97706 100%) !important; 
+        background: linear-gradient(135deg, #fcd34d 0%, #d97706 100%) !important; 
         color: #000 !important; font-weight: 800 !important; border-radius: 10px !important; 
         border: none !important; font-family: 'Orbitron', sans-serif; padding: 12px !important;
     }
@@ -187,20 +180,18 @@ with st.sidebar:
     
     if api_key:
         if check_api_connection(api_key):
-            st.markdown('<div class="status-box status-online">● SYSTEM ONLINE: ACCESS GRANTED</div>', unsafe_allow_html=True)
+            st.markdown('<div class="status-box status-online">● SYSTEM ONLINE</div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="status-box status-offline">○ SYSTEM OFFLINE: INVALID KEY</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="status-box" style="border: 1px solid rgba(255,255,255,0.1);">○ STANDBY: KEY REQUIRED</div>', unsafe_allow_html=True)
+            st.markdown('<div class="status-box status-offline">○ INVALID KEY</div>', unsafe_allow_html=True)
 
-    if st.button(t["reboot"], use_container_width=True):
+    if st.button(t["reboot"], width='stretch'):
         st.session_state.clear()
         st.rerun()
 
 st.markdown(f'<div class="brand-container"><div class="brand-logo">{t["header"]}</div></div>', unsafe_allow_html=True)
 
 if not api_key:
-    st.info("🔐 INITIALIZE SYSTEM: Voer je API-key in de sidebar in.")
+    st.info("🔐 INITIALIZE SYSTEM: Voer je API-key in.")
 else:
     col_l, col_r = st.columns([1, 1.2])
 
@@ -211,11 +202,11 @@ else:
             st.markdown('<div class="scan-container">', unsafe_allow_html=True)
             if st.session_state.is_scanning:
                 st.markdown('<div class="scan-line"></div>', unsafe_allow_html=True)
-            st.image(u_file, use_container_width=True)
+            st.image(u_file, width='stretch')
             st.markdown('</div>', unsafe_allow_html=True)
             
             u_ctx = st.text_area("Intelligence Context", placeholder=t["ctx_ph"], height=80)
-            if st.button(t["btn_scan"], use_container_width=True):
+            if st.button(t["btn_scan"], width='stretch'):
                 st.session_state.is_scanning = True
                 client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
                 st.session_state.state = get_analysis(client, process_img(u_file), u_ctx, lang_choice)
@@ -223,7 +214,7 @@ else:
                 st.rerun()
 
     with col_r:
-        if st.session_state.state:
+        if st.session_state.state and isinstance(st.session_state.state, dict):
             s = st.session_state.state
             st.markdown(f"<div class='section-header'>{t['tag_signals']}</div>", unsafe_allow_html=True)
             sc1, sc2 = st.columns(2)
@@ -235,8 +226,19 @@ else:
             st.markdown(f"<div class='section-header'>{t['tag_pick']}</div>", unsafe_allow_html=True)
             opts = s.get('options', [])
             w_idx = s.get('winner_idx', 0)
-            if opts:
+            
+            if opts and len(opts) > w_idx:
                 w, b = opts[w_idx], s.get('breakdown', {})
+                
+                # Veiligheidscheck voor breakdown
+                v_v = b.get('vibe', {}).get('val', 50) if isinstance(b.get('vibe'), dict) else 50
+                t_v = b.get('timing', {}).get('val', 50) if isinstance(b.get('timing'), dict) else 50
+                s_v = b.get('subtext', {}).get('val', 50) if isinstance(b.get('subtext'), dict) else 50
+                
+                v_d = b.get('vibe', {}).get('desc', '') if isinstance(b.get('vibe'), dict) else ''
+                t_d = b.get('timing', {}).get('desc', '') if isinstance(b.get('timing'), dict) else ''
+                s_d = b.get('subtext', {}).get('desc', '') if isinstance(b.get('subtext'), dict) else ''
+
                 st.markdown(f"""
                     <div class="winner-card">
                         <div class="hit-rate-container"><div class="success-badge">{s.get('success_rate', 85)}% HIT RATE</div></div>
@@ -247,21 +249,21 @@ else:
                         </div>
                         <div class="prob-container">
                             <div class="prob-item">
-                                <div class="prob-header"><span class="prob-title">VIBE</span><span class="prob-desc">{b.get('vibe',{}).get('desc','')}</span></div>
-                                <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b.get('vibe',{}).get('val',50)}%"></div></div>
+                                <div class="prob-header"><span class="prob-title">VIBE</span><span class="prob-desc">{v_d}</span></div>
+                                <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{v_v}%"></div></div>
                             </div>
                             <div class="prob-item">
-                                <div class="prob-header"><span class="prob-title">TIMING</span><span class="prob-desc">{b.get('timing',{}).get('desc','')}</span></div>
-                                <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b.get('timing',{}).get('val',50)}%"></div></div>
+                                <div class="prob-header"><span class="prob-title">TIMING</span><span class="prob-desc">{t_d}</span></div>
+                                <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{t_v}%"></div></div>
                             </div>
                             <div class="prob-item">
-                                <div class="prob-header"><span class="prob-title">SUBTEXT</span><span class="prob-desc">{b.get('subtext',{}).get('desc','')}</span></div>
-                                <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b.get('subtext',{}).get('val',50)}%"></div></div>
+                                <div class="prob-header"><span class="prob-title">SUBTEXT</span><span class="prob-desc">{s_d}</span></div>
+                                <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{s_v}%"></div></div>
                             </div>
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
-                if st.button(f"✨ {t['copy_btn']} ALPHA LINE"): st.toast(t["copied"])
+                if st.button(f"✨ {t['copy_btn']} ALPHA LINE", width='stretch'): st.toast(t["copied"])
 
             st.markdown(f"<div class='section-header' style='margin-top:40px;'>{t['tag_dims']}</div>", unsafe_allow_html=True)
             for i, opt in enumerate(opts):
@@ -271,7 +273,7 @@ else:
                         <div style="font-weight:600; margin-bottom:5px;">"{opt.get('zin')}"</div>
                         <div style="font-size:0.7rem; opacity:0.6;">{opt.get('psychology')}</div>
                     </div>""", unsafe_allow_html=True)
-                    if st.button(f"COPY {opt.get('type','ALT')}", key=f"cp_{i}"): st.toast(t["copied"])
+                    if st.button(f"COPY {opt.get('type','ALT')}", key=f"cp_{i}", width='stretch'): st.toast(t["copied"])
         else: st.info(t["idle_msg"])
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px; letter-spacing:5px;'>SOVEREIGN ENGINE V12.3 // PLATINUM EDITION</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px; letter-spacing:5px;'>SOVEREIGN ENGINE V12.4 // BUGFIXED</div>", unsafe_allow_html=True)
