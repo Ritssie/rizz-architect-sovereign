@@ -5,12 +5,11 @@ import json
 import time
 
 # ==============================================================================
-# --- 1. CONFIG & SYSTEM UI ---
+# --- 1. CONFIG & SOVEREIGN STYLING ---
 # ==============================================================================
-st.set_page_config(page_title="RIZZ ARCHITECT v22.0", page_icon="👑", layout="wide")
+st.set_page_config(page_title="RIZZ ARCHITECT", page_icon="👑", layout="wide")
 
 if 'state' not in st.session_state: st.session_state.state = None
-if 'history' not in st.session_state: st.session_state.history = []
 
 st.markdown("""
     <style>
@@ -20,51 +19,56 @@ st.markdown("""
         background-color: #020617 !important; color: #f8fafc !important; font-family: 'Inter', sans-serif; 
     }
 
-    /* Badge & Card Styling */
-    .signal-badge {
-        padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
-        margin-bottom: 8px; display: block; border: 1px solid rgba(255,255,255,0.1);
+    /* Signal Center Styling */
+    .signal-card {
+        padding: 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+        margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05);
+        display: flex; align-items: center; gap: 10px;
     }
-    .green-bg { background: rgba(34, 197, 94, 0.15); color: #4ade80; border-color: #22c55e44; }
-    .red-bg { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: #ef444444; }
+    .green-zone { background: rgba(34, 197, 94, 0.1); color: #4ade80; border-color: #22c55e33; }
+    .red-zone { background: rgba(239, 68, 68, 0.1); color: #f87171; border-color: #ef444433; }
 
-    .alpha-card {
-        background: linear-gradient(145deg, #0f172a, #020617);
+    /* Alpha Output Styling */
+    .alpha-box {
+        background: linear-gradient(160deg, #0f172a 0%, #020617 100%);
         border: 1px solid #1e293b; border-radius: 15px; padding: 25px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.6); margin-bottom: 25px;
     }
-    .flame-mode { border: 1px solid #f59e0b !important; box-shadow: 0 0 20px rgba(245, 158, 11, 0.2) !important; }
-    
+    .flame-glow { border: 1px solid #f59e0b !important; box-shadow: 0 0 25px rgba(245, 158, 11, 0.2) !important; }
+
+    /* Share Card Mockup */
+    .share-preview {
+        background: #000; border: 2px solid #fcd34d; padding: 30px; border-radius: 10px;
+        text-align: center; font-family: 'Orbitron'; color: white; margin-top: 20px;
+    }
+
     .stProgress > div > div > div > div { background-image: linear-gradient(to right, #1e293b, #fcd34d) !important; }
+    h1 { font-family: 'Orbitron'; letter-spacing: 3px; }
     </style>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# --- 2. THE SOVEREIGN ENGINE (Final Logic) ---
+# --- 2. THE SOVEREIGN CORE ---
 # ==============================================================================
 def run_sovereign_scan(client, chat_b64, bio_text, vibe, plat):
     # Harde uitsluiting van vraagtekens voor offensieve modi
-    question_constraint = ""
-    if vibe in ["Alpha", "The Flame"]:
-        question_constraint = "CRITICAL RULE: You are forbidden from using question marks (?). Use bold statements, cold reads, or commands."
+    q_rule = "STRICT: NO question marks (?) allowed. Use bold statements or playful assumptions." if vibe in ["Alpha", "The Flame"] else ""
 
-    prompt = f"""Role: Master Dating Architect. Platform: {plat}. Vibe: {vibe}.
-    {question_constraint}
-    1. Scan for Investment Markers (Response speed, length, questions asked).
-    2. Identify 2 Green Flags and 2 Red Flags.
-    3. Generate a 'Tactical Move' and a 'Power Move' in Dutch.
+    prompt = f"""Role: Elite Dating Architect. Platform: {plat}. Vibe: {vibe}. {q_rule}
+    Scan chat for investment markers. Identify 2 Green Flags (🎯) and 2 Red Flags (⚠️).
+    Generate 2 strategic moves in Dutch: 'Tactical' and 'Power'.
     
-    Return JSON ONLY: {{
+    Return JSON: {{
         "metrics": {{"warmth": int, "tension": int, "risk": int}},
-        "signals": {{"green": ["str"], "red": ["str"]}},
-        "note": "Context-aware strategy based on flags",
+        "flags": {{"green": ["str"], "red": ["str"]}},
+        "note": "str",
         "moves": [
             {{"type": "Tactical", "zin": "str", "logic": "str"}},
             {{"type": "Power", "zin": "str", "logic": "str"}}
         ]
     }}"""
     
-    msg = [{"type": "text", "text": f"Bio/Context: {bio_text}"}]
+    msg = [{"type": "text", "text": f"Context: {bio_text}"}]
     if chat_b64: msg.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{chat_b64}"}})
 
     try:
@@ -77,73 +81,71 @@ def run_sovereign_scan(client, chat_b64, bio_text, vibe, plat):
     except: return None
 
 # ==============================================================================
-# --- 3. UI ASSEMBLY ---
+# --- 3. DASHBOARD ASSEMBLY ---
 # ==============================================================================
-st.markdown("<h1 style='text-align:center; font-family:Orbitron; color:#fcd34d;'>RIZZ<span>ARCHITECT</span> v22</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#fff;'>RIZZ<span style='color:#fcd34d;'>ARCHITECT</span></h1>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### 🕹️ COMMAND CENTER")
+    st.markdown("### 🛰️ SYSTEM CONTROL")
     api_key = st.text_input("Grok API Key", type="password")
-    vibe = st.selectbox("Vibe Profile", ["Funny", "Mysterious", "Alpha", "The Flame"])
-    plat = st.selectbox("Platform Tuner", ["Tinder", "Bumble", "Hinge"])
+    vibe_mode = st.selectbox("Vibe", ["Funny", "Mysterious", "Alpha", "The Flame"])
+    plat_mode = st.selectbox("Platform", ["Tinder", "Bumble", "Hinge"])
     st.markdown("---")
-    if st.button("🔄 REBOOT SYSTEM"): 
+    if st.button("🔄 FULL SYSTEM REBOOT"): 
         st.session_state.state = None
         st.rerun()
 
 col_in, col_out = st.columns([1, 1.8], gap="large")
 
 with col_in:
-    st.markdown("#### 📥 INTEL INPUT")
-    u_chat = st.file_uploader("Upload Chat", type=['png','jpg','jpeg'], label_visibility="collapsed")
+    st.markdown("#### 📥 INTEL DATA")
+    u_chat = st.file_uploader("Upload Context Screenshot", type=['png','jpg','jpeg'], label_visibility="collapsed")
     if u_chat: st.image(u_chat, use_container_width=True)
-    u_bio = st.text_area("Manual Context / Bio", placeholder="Wat weten we over haar?", height=80)
+    u_bio = st.text_area("Profile Insights", placeholder="Interesses, prompts, vibe...", height=80)
     
     if st.button("⚡ EXECUTE SOVEREIGN SCAN"):
         if api_key and u_chat:
-            with st.status("Initializing Neural Scan...") as status:
+            with st.status("Performing Neural Analysis...") as status:
                 client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
                 c_b64 = base64.b64encode(u_chat.getvalue()).decode()
-                st.session_state.state = run_sovereign_scan(client, c_b64, u_bio, vibe, plat)
-                status.update(label="Signals Extracted.", state="complete")
+                st.session_state.state = run_sovereign_scan(client, c_b64, u_bio, vibe_mode, plat_mode)
+                status.update(label="Target Analyzed.", state="complete")
             st.rerun()
 
 with col_out:
-    st.markdown("#### 📡 SIGNAL CENTER")
+    st.markdown("#### 📡 TACTICAL MONITOR")
     
-    # Pre-load Meters (Zero Shift)
-    m1, m2, m3 = st.columns(3)
+    # Permanent Meters (Zero Shift)
     s = st.session_state.state if st.session_state.state else {}
     met = s.get('metrics', {})
     
-    m1.write(f"**Warmth**")
+    m1, m2, m3 = st.columns(3)
+    m1.write(f"**WARMTH** ({met.get('warmth', 0)}%)")
     m1.progress(met.get('warmth', 0) / 100)
-    m2.write(f"**Tension**")
+    m2.write(f"**TENSION** ({met.get('tension', 0)}%)")
     m2.progress(met.get('tension', 0) / 100)
-    m3.write(f"**Ghost Risk**")
+    m3.write(f"**RISK** ({met.get('risk', 0)}%)")
     m3.progress(met.get('risk', 0) / 100)
 
     st.markdown("---")
 
-    # Flags Row
-    f_left, f_right = st.columns(2)
-    
     if s:
-        # Render Signals
+        # Signal Center
+        f_left, f_right = st.columns(2)
         with f_left:
-            for g in s.get('signals', {}).get('green', []):
-                st.markdown(f"<div class='signal-badge green-bg'>✅ {g}</div>", unsafe_allow_html=True)
+            for g in s.get('flags', {}).get('green', []):
+                st.markdown(f"<div class='signal-card green-zone'>🎯 {g}</div>", unsafe_allow_html=True)
         with f_right:
-            for r in s.get('signals', {}).get('red', []):
-                st.markdown(f"<div class='signal-badge red-bg'>🚩 {r}</div>", unsafe_allow_html=True)
+            for r in s.get('flags', {}).get('red', []):
+                st.markdown(f"<div class='signal-card red-zone'>⚠️ {r}</div>", unsafe_allow_html=True)
         
         st.info(f"**Architect's Note:** {s.get('note')}")
 
-        # Render Output Cards
+        # Alpha Moves
         for i, move in enumerate(s.get('moves', [])):
-            card_class = "alpha-card flame-mode" if (vibe == "The Flame" or move['type'] == "Power") else "alpha-card"
+            card_style = "alpha-box flame-glow" if (vibe_mode == "The Flame" or move['type'] == "Power") else "alpha-box"
             st.markdown(f"""
-                <div class="{card_class}">
+                <div class="{card_style}">
                     <small style="font-family:Orbitron; color:#fcd34d;">{move['type'].upper()} MOVE</small>
                     <h2 style="color:white; margin:10px 0;">"{move['zin']}"</h2>
                     <p style="font-size:0.85rem; opacity:0.7; border-top:1px solid #334155; padding-top:10px;">
@@ -152,15 +154,25 @@ with col_out:
                 </div>
             """, unsafe_allow_html=True)
             
-            # Copy & Feedback Row
-            c_btn, f_btn = st.columns([1, 1])
-            if c_btn.button(f"📋 Copy Line {i+1}", key=f"copy_{i}"): st.toast("Copied!")
-            with f_btn:
-                sub_c1, sub_c2 = st.columns(2)
-                if sub_c1.button("🔥", key=f"fire_{i}"): st.toast("Data Saved: Fire")
-                if sub_c2.button("❄️", key=f"ice_{i}"): st.toast("Data Saved: Ice")
-
+            c_btn, s_btn = st.columns([1, 1])
+            if c_btn.button(f"📋 Copy Move {i+1}", key=f"cp_{i}"): st.toast("Line Copied!")
+            
+            # De "Share Win" Logica (Visueel Component)
+            if s_btn.button(f"🖼️ Generate Share Card {i+1}", key=f"sh_{i}"):
+                st.markdown(f"""
+                    <div class="share-preview">
+                        <p style="font-size:0.6rem; opacity:0.5; margin-bottom:10px;">TACTICAL REPORT // {plat_mode.upper()}</p>
+                        <h4 style="color:#fcd34d; margin-bottom:20px;">TARGET ANALYZED</h4>
+                        <p style="font-family:'Inter'; font-style:italic; font-size:1.2rem; margin-bottom:25px;">"{move['zin']}"</p>
+                        <div style="display:flex; justify-content:space-around; font-size:0.7rem; border-top:1px solid #334155; padding-top:15px;">
+                            <span>TENSION: {met.get('tension')}%</span>
+                            <span>WARMTH: {met.get('warmth')}%</span>
+                        </div>
+                        <p style="margin-top:20px; font-size:0.5rem; color:#fcd34d;">CALCULATED BY RIZZ ARCHITECT AI</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.download_button("💾 Download Report (Mockup)", "Fake Image Data", file_name="rizz_report.txt")
     else:
         st.info("System Standby. Upload tactical data om de neural scan te starten.")
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SOVEREIGN v22.0 // FINAL STABLE // ANTI_INTERVIEW_PROTOCOL</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.2; font-size:0.6rem; margin-top:80px; font-family:Orbitron; letter-spacing:2px;'>PROJECT SOVEREIGN // ASCENDED STATUS // BEYOND THE INTERVIEW</div>", unsafe_allow_html=True)
