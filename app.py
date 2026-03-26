@@ -1,173 +1,160 @@
 import streamlit as st
 from openai import OpenAI
-from PIL import Image
 import base64
 import json
 
 # ==============================================================================
-# --- 1. CONFIG & SYSTEM ---
+# --- 1. CONFIG & PERSISTENT STATE ---
 # ==============================================================================
-st.set_page_config(page_title="RIZZ ARCHITECT v18.5", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="RIZZ ARCHITECT v19.0", page_icon="🕵️", layout="wide")
 
-# Zorg dat de state altijd een dictionary is om KeyErrors te voorkomen
-if 'state' not in st.session_state or st.session_state.state is None:
-    st.session_state.state = {}
-
-def get_color(val, reverse=False):
-    if reverse: val = 100 - val
-    if val < 30: return "#ef4444"
-    if val < 70: return "#facc15"
-    return "#22c55e"
+if 'state' not in st.session_state: st.session_state.state = None
 
 # ==============================================================================
-# --- 2. ELITE UI STYLING ---
+# --- 2. ADVANCED UI STYLING (Zero Shift) ---
 # ==============================================================================
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap');
     
     html, body, [data-testid="stAppViewContainer"] { 
-        background-color: #010409 !important; color: #e6edf3 !important; font-family: 'Inter', sans-serif; 
+        background-color: #0d1117 !important; color: #c9d1d9 !important; font-family: 'Inter', sans-serif; 
     }
     
-    .platform-badge {
-        padding: 5px 15px; border-radius: 5px; font-family: 'Orbitron'; font-size: 0.7rem;
-        text-transform: uppercase; margin-bottom: 15px; display: inline-block;
+    /* Result Cards met vaste padding om shift te minimaliseren */
+    .res-card {
+        background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+        padding: 20px; margin-bottom: 15px; min-height: 120px;
     }
-    .hinge { background: #8e2de2; color: white; border: 1px solid #ffffff44; }
-    .bumble { background: #ffcb37; color: black; border: 1px solid #00000022; }
-    .tinder { background: #fe3c72; color: white; border: 1px solid #ffffff44; }
-
-    .alpha-card {
-        background: rgba(255, 255, 255, 0.03); border: 1px solid #fcd34d66;
-        border-radius: 15px; padding: 20px; margin-bottom: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    .type-tag { 
+        font-family: 'Orbitron'; font-size: 0.6rem; color: #fcd34d; 
+        border: 1px solid #fcd34d33; padding: 2px 8px; border-radius: 4px;
     }
-    .logic-box { 
-        font-size: 0.85rem; color: #fcd34d; opacity: 0.9; 
-        margin-top: 10px; font-style: italic; background: rgba(252, 211, 77, 0.05);
-        padding: 8px; border-radius: 5px;
-    }
-    .badge {
-        display: inline-block; padding: 4px 12px; border-radius: 20px;
-        font-size: 0.75rem; font-weight: bold; margin-right: 5px; margin-bottom: 5px;
-        background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-    }
+    .logic-sub { font-size: 0.8rem; opacity: 0.6; margin-top: 8px; font-style: italic; }
+    
+    .img-preview { border: 2px solid #30363d; border-radius: 10px; position: sticky; top: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# --- 3. ENGINE (Platform Logic) ---
+# --- 3. ARCHITECT ENGINE v19 (The Rule of Three) ---
 # ==============================================================================
-def run_analysis(client, chat_b64, bio_b64, bio_text, ctx, vibe, platform):
+def run_neural_scan(client, chat_b64, bio_b64, bio_text, vibe, platform):
     prompt = f"""Role: Sovereign Dating Architect. Platform: {platform}.
-    Analyze Chat + Bio. If Hinge, analyze prompts. If Bumble, focus on the opener.
-    Respond in Dutch. Style: {vibe}.
+    Detect UI Anchors (Hinge Prompts, Bumble Openers). 
+    Generate 3 response types in Dutch. Vibe: {vibe}.
     
     STRICT JSON Output:
     {{
-        "detected_platform": "Hinge/Bumble/Tinder",
-        "detected_interests": ["str"],
-        "sentiment_label": "str",
-        "ghost_risk": int,
-        "success_rate": int,
-        "tags": ["str"],
-        "fast_move": {{"zin": "str", "logic": "str"}},
-        "deep_move": {{"zin": "str", "logic": "str"}},
-        "platform_tip": "str"
+        "platform": "Hinge/Bumble/Tinder",
+        "anchors_found": ["str"],
+        "metrics": {{"sentiment": "str", "ghost_risk": int}},
+        "punchy": {{"zin": "max 7 words", "logic": "str"}},
+        "contextualist": {{"zin": "medium length", "logic": "str"}},
+        "questioner": {{"zin": "open question", "logic": "str"}}
     }}"""
     
-    msg_content = [{"type": "text", "text": f"Ctx: {ctx}. Manual Bio: {bio_text}"}]
-    if chat_b64: msg_content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{chat_b64}"}})
-    if bio_b64: msg_content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{bio_b64}"}})
+    content = [{"type": "text", "text": f"Bio: {bio_text}"}]
+    if chat_b64: content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{chat_b64}"}})
+    if bio_b64: content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{bio_b64}"}})
 
     try:
         res = client.chat.completions.create(
             model="grok-4.20-0309-non-reasoning",
             response_format={"type": "json_object"},
-            messages=[{"role": "system", "content": prompt}, {"role": "user", "content": msg_content}]
+            messages=[{"role": "system", "content": prompt}, {"role": "user", "content": content}]
         )
         return json.loads(res.choices[0].message.content)
-    except Exception as e:
-        return {"error": str(e)}
+    except Exception as e: return {"error": str(e)}
 
 # ==============================================================================
-# --- 4. UI ASSEMBLY ---
+# --- 4. APP LAYOUT (Sticky Preview & Skeleton) ---
 # ==============================================================================
-st.markdown("<h1 style='text-align:center; font-family:Orbitron; color:#fcd34d;'>RIZZ<span>ARCHITECT</span> v18.5</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; font-family:Orbitron; color:#fcd34d;'>RIZZ<span>ARCHITECT</span> v19</h1>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### 🛰️ GLOBAL SETTINGS")
+    st.markdown("### ⚙️ SYSTEM CONFIG")
     api_key = st.text_input("Grok API Key", type="password")
-    platform_hint = st.selectbox("Target Platform", ["Auto-Detect", "Hinge", "Bumble", "Tinder"])
-    vibe_style = st.select_slider("Vibe", ["Playful", "Alpha", "Mysterious"])
-    st.markdown("---")
-    if st.button("RESET ENGINE"): 
-        st.session_state.state = {}
+    vibe = st.select_slider("Vibe", ["Funny", "Mysterious", "Alpha"])
+    platform_mode = st.selectbox("Detection Mode", ["Auto-Detect Anchors", "Hinge", "Bumble", "Tinder"])
+    if st.button("CLEAN STATE"): 
+        st.session_state.state = None
         st.rerun()
 
-col_left, col_right = st.columns([1, 1.2], gap="large")
+# Hoofdindeling: Links de Foto, Rechts de Analyse
+col_img, col_main = st.columns([1, 2], gap="medium")
 
-with col_left:
-    st.markdown("#### 📥 DATA INGESTION")
-    u_chat = st.file_uploader("Upload Chat", type=['png','jpg','jpeg'])
-    u_bio = st.file_uploader("Upload Bio Screenshot", type=['png','jpg','jpeg'])
-    u_bio_text = st.text_area("Manual Bio Info", placeholder="e.g. She likes traveling...", height=70)
+with col_img:
+    st.markdown("#### 🖼️ CONTEXT PREVIEW")
+    u_chat = st.file_uploader("Upload Chat", type=['png','jpg','jpeg'], label_visibility="collapsed")
+    if u_chat:
+        st.markdown('<div class="img-preview">', unsafe_allow_html=True)
+        st.image(u_chat, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     
+    u_bio = st.file_uploader("Upload Bio/Prompt", type=['png','jpg','jpeg'])
+    u_text = st.text_area("Manual Context", placeholder="Interesses, sfeer...", height=100)
+
+with col_main:
+    # --- PLACEHOLDERS (Skeleton) ---
+    st.markdown("#### 📡 ARCHITECT OUTPUT")
+    header_placeholder = st.empty()
+    metric_placeholder = st.empty()
+    result_placeholder = st.empty()
+
     if st.button("⚡ EXECUTE NEURAL SCAN"):
-        if not api_key: st.error("API Key Required")
-        else:
-            with st.status("Analyzing Patterns...", expanded=True):
+        if api_key and u_chat:
+            with st.status("Scanning UI Anchors & Patterns..."):
                 client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
-                c_b64 = base64.b64encode(u_chat.getvalue()).decode() if u_chat else None
+                c_b64 = base64.b64encode(u_chat.getvalue()).decode()
                 b_b64 = base64.b64encode(u_bio.getvalue()).decode() if u_bio else None
-                st.session_state.state = run_analysis(client, c_b64, b_b64, u_bio_text, "Dating", vibe_style, platform_hint)
+                st.session_state.state = run_neural_scan(client, c_b64, b_b64, u_text, vibe, platform_mode)
                 st.rerun()
+        else: st.warning("Zorg voor een API Key en een Chat Screenshot.")
 
-with col_right:
-    s = st.session_state.state
-    if s and "error" not in s and s != {}:
-        # Platform Display
-        p_name = s.get('detected_platform', 'Tinder').lower()
-        st.markdown(f"<div class='platform-badge {p_name}'>{p_name} Detected</div>", unsafe_allow_html=True)
+    # --- RENDER OUTPUT ---
+    if st.session_state.state:
+        s = st.session_state.state
         
-        # Metrics
-        c1, c2, c3 = st.columns(3)
-        g_color = get_color(s.get('ghost_risk', 0), reverse=True)
-        s_color = get_color(s.get('success_rate', 0))
+        # Header & Platform
+        with header_placeholder:
+            plat = s.get('platform', 'Detecting...')
+            st.markdown(f"**Platform:** `{plat}` | **Anchors:** `{', '.join(s.get('anchors_found', ['None']))}`")
         
-        c1.metric("Sentiment", s.get('sentiment_label', 'Neutral'))
-        c2.markdown(f"<small>GHOST RISK</small><br><b style='color:{g_color}; font-size:1.2rem;'>{s.get('ghost_risk', 0)}%</b>", unsafe_allow_html=True)
-        c3.markdown(f"<small>HIT RATE</small><br><b style='color:{s_color}; font-size:1.2rem;'>{s.get('success_rate', 0)}%</b>", unsafe_allow_html=True)
+        # Metrics Row
+        with metric_placeholder:
+            m1, m2 = st.columns(2)
+            m1.metric("Sentiment", s.get('metrics', {}).get('sentiment', 'N/A'))
+            risk = s.get('metrics', {}).get('ghost_risk', 0)
+            m2.metric("Ghost Risk", f"{risk}%", delta=f"{risk}%", delta_color="inverse")
 
-        # Tags
-        st.markdown("<div style='margin: 10px 0;'>", unsafe_allow_html=True)
-        for tag in s.get('tags', []): st.markdown(f"<span class='badge'>⚡ {tag}</span>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        # The Rule of Three Results
+        with result_placeholder:
+            # 1. The Punchy One
+            p = s.get('punchy', {})
+            st.markdown(f"""<div class="res-card">
+                <span class="type-tag">THE PUNCHY ONE</span>
+                <h3 style="margin:10px 0; color:white;">"{p.get('zin')}"</h3>
+                <div class="logic-sub"><b>Logic:</b> {p.get('logic')}</div>
+            </div>""", unsafe_allow_html=True)
+            
+            # 2. The Contextualist
+            c = s.get('contextualist', {})
+            st.markdown(f"""<div class="res-card" style="border-left: 3px solid #fcd34d;">
+                <span class="type-tag" style="background:#fcd34d; color:black;">THE CONTEXTUALIST</span>
+                <h3 style="margin:10px 0; color:white;">"{c.get('zin')}"</h3>
+                <div class="logic-sub"><b>Logic:</b> {c.get('logic')}</div>
+            </div>""", unsafe_allow_html=True)
+            
+            # 3. The Questioner
+            q = s.get('questioner', {})
+            st.markdown(f"""<div class="res-card">
+                <span class="type-tag">THE QUESTIONER</span>
+                <h3 style="margin:10px 0; color:white;">"{q.get('zin')}"</h3>
+                <div class="logic-sub"><b>Logic:</b> {q.get('logic')}</div>
+            </div>""", unsafe_allow_html=True)
 
-        if s.get('platform_tip'):
-            st.info(f"💡 **Platform Tip:** {s['platform_tip']}")
-
-        # Output Cards (Bulletproofed with .get)
-        fast = s.get('fast_move', {"zin": "No data", "logic": "N/A"})
-        deep = s.get('deep_move', {"zin": "No data", "logic": "N/A"})
-
-        st.markdown("### 🏆 FAST MOVE")
-        st.markdown(f"""<div class='alpha-card'>
-            <h2 style='color:white; margin:0;'>"{fast.get('zin')}"</h2>
-            <div class='logic-box'><b>Logic:</b> {fast.get('logic')}</div>
-        </div>""", unsafe_allow_html=True)
-        if st.button("📋 Copy Fast"): st.toast("Copied!")
-
-        st.markdown("### 🧠 DEEP MOVE")
-        st.markdown(f"""<div class='alpha-card' style='border-color:#8e2de2;'>
-            <h2 style='color:white; margin:0;'>"{deep.get('zin')}"</h2>
-            <div class='logic-box'><b>Logic:</b> {deep.get('logic')}</div>
-        </div>""", unsafe_allow_html=True)
-        if st.button("📋 Copy Deep"): st.toast("Copied!")
-    elif "error" in s:
-        st.error(f"AI Error: {s['error']}")
     else:
-        st.info("System stand-by. Initialiseer scan.")
+        result_placeholder.info("Awaiting Tactical Ingestion. Gebruik de knop hierboven om te scannen.")
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SOVEREIGN v18.5 // BULLETPROOF ENGINE</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:100px;'>SOVEREIGN v19.0 // RULE OF THREE // STICKY_CONTEXT</div>", unsafe_allow_html=True)
