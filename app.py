@@ -9,14 +9,14 @@ import json
 # --- 1. CORE SYSTEM CONFIGURATION ---
 # ==============================================================================
 st.set_page_config(
-    page_title="Rizz Architect Sovereign v10.1", 
+    page_title="Rizz Architect Sovereign v10.5", 
     page_icon="👑", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ==============================================================================
-# --- 2. MULTI-LANGUAGE ARCHITECT DICTIONARY ---
+# --- 2. MULTI-LANGUAGE DICTIONARY ---
 # ==============================================================================
 translations = {
     "NL": {
@@ -27,20 +27,49 @@ translations = {
         "tag_dims": "📐 ALTERNATIEVE DIMENSIES",
         "tag_signals": "📡 SOCIAL SIGNALS",
         "ctx_ph": "Context: vibe, laatste bericht, doel...",
-        "btn_scan": "⚡ EXECUTE PRECISION SCAN",
+        "btn_scan": "⚡ START ANALYSE",
         "dark_mode": "🌑 Dark Psychology Mode",
-        "reboot": "🔄 SYSTEM REBOOT",
+        "reboot": "🔄 SYSTEEM REBOOT",
         "upload_label": "📂 DATA SOURCE (Screenshot)",
         "copy_btn": "📋",
         "idle_msg": "Systeem stand-by. Upload screenshot.",
+        "lang_label": "🌍 Taal / Language",
+        "strategy_label": "STRATEGIE",
+        "tactics_label": "Tactiek",
         "dark_warning": """
             <div style='background: rgba(248, 113, 113, 0.08); border: 2px solid #f87171; 
                  border-radius: 12px; padding: 15px; color: #f87171; font-size: 0.75rem; line-height: 1.4; margin-top: 15px;'>
                 <div style='font-size: 1.5rem; margin-bottom: 5px;'>⚖️</div>
-                <b style='font-family:JetBrains Mono; letter-spacing:1px;'>LEGAL DISCLOSURE: DARK OPS</b><br><br>
-                Rizz Architect is een adviserend instrument. Het gebruik is <b>geheel op eigen risico</b>. 
-                Wij zijn niet aansprakelijk voor resultaten of emotionele schade. 
-                De gebruiker kiest en verzendt altijd zelf; wij adviseren slechts (vaak gebrekkig).
+                <b style='font-family:JetBrains Mono; letter-spacing:1px;'>JURIDISCHE DISCLAIMER</b><br><br>
+                Rizz Architect is een adviserend instrument. Gebruik is <b>eigen risico</b>. 
+                De gebruiker is verantwoordelijk voor de uiteindelijke interactie. Wij adviseren slechts.
+            </div>
+        """
+    },
+    "EN": {
+        "header": "RIZZ<span>ARCHITECT</span>",
+        "tag_intake": "📥 TACTICAL INTAKE",
+        "tag_briefing": "📖 MISSION BRIEFING",
+        "tag_pick": "🏆 ARCHITECT'S CHOICE",
+        "tag_dims": "📐 ALTERNATIVE DIMENSIONS",
+        "tag_signals": "📡 SOCIAL SIGNALS",
+        "ctx_ph": "Context: vibe, last message, goal...",
+        "btn_scan": "⚡ EXECUTE SCAN",
+        "dark_mode": "🌑 Dark Psychology Mode",
+        "reboot": "🔄 SYSTEM REBOOT",
+        "upload_label": "📂 DATA SOURCE (Screenshot)",
+        "copy_btn": "📋",
+        "idle_msg": "System on standby. Upload screenshot.",
+        "lang_label": "🌍 Language / Taal",
+        "strategy_label": "STRATEGY",
+        "tactics_label": "Tactics",
+        "dark_warning": """
+            <div style='background: rgba(248, 113, 113, 0.08); border: 2px solid #f87171; 
+                 border-radius: 12px; padding: 15px; color: #f87171; font-size: 0.75rem; line-height: 1.4; margin-top: 15px;'>
+                <div style='font-size: 1.5rem; margin-bottom: 5px;'>⚖️</div>
+                <b style='font-family:JetBrains Mono; letter-spacing:1px;'>LEGAL DISCLOSURE</b><br><br>
+                Rizz Architect is an advisory tool. Use at your <b>own risk</b>. 
+                The user is solely responsible for the final interaction. We only provide advice.
             </div>
         """
     }
@@ -61,44 +90,33 @@ st.markdown("""
     .brand-logo { font-family: 'Playfair Display', serif; font-size: 3rem; color: #ffffff !important; letter-spacing: -2px; }
     .brand-logo span { color: #fcd34d !important; text-shadow: 0 0 20px rgba(252, 211, 77, 0.4); }
 
-    .pill { 
-        display: block; padding: 10px; border-radius: 8px; font-size: 0.7rem; 
-        font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; position: relative; cursor: help;
+    .section-header {
+        font-family: 'JetBrains Mono', monospace; color: #fcd34d; font-size: 0.7rem;
+        letter-spacing: 3px; margin: 35px 0 15px 0; display: flex; align-items: center;
+        text-transform: uppercase; opacity: 0.8;
     }
-    .pill-green { background: rgba(74, 222, 128, 0.05); color: #4ade80; border: 1px solid #4ade8022; }
-    .pill-red { background: rgba(248, 113, 113, 0.05); color: #f87171; border: 1px solid #f8717122; }
-    .pill:hover::after {
-        content: attr(data-reason); position: absolute; left: 0; bottom: 120%;
-        background: #161b22; color: white; padding: 8px 12px; border-radius: 6px; 
-        font-size: 0.65rem; width: 200px; border: 1px solid rgba(255,255,255,0.1); z-index: 99;
-    }
-
-    .prob-container { margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; }
-    .prob-row { display: flex; justify-content: space-between; font-size: 0.65rem; font-family: 'JetBrains Mono'; margin-bottom: 4px; }
-    .prob-bar-bg { background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; width: 100%; margin-bottom: 8px; }
-    .prob-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
-
-    .success-badge {
-        position: absolute; top: 20px; right: 20px;
-        padding: 5px 12px; border-radius: 20px;
-        font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.75rem;
-    }
+    .section-header::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(252, 211, 77, 0.3), transparent); margin-left: 15px; }
 
     .sovereign-card { 
         background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); 
-        border-radius: 14px; padding: 20px; margin-bottom: 15px; position: relative;
+        border-radius: 14px; padding: 20px; margin-bottom: 25px; position: relative;
     }
     .winner-card { border: 2px solid #fcd34d; background: linear-gradient(165deg, rgba(252, 211, 77, 0.08) 0%, rgba(1, 4, 9, 1) 100%); }
 
-    .stButton>button { 
-        background: linear-gradient(90deg, #fcd34d 0%, #fbbf24 100%) !important; 
-        color: #010409 !important; font-weight: 700; border-radius: 10px; border: none !important;
-    }
+    /* Tooltips */
+    .pill { display: block; padding: 10px; border-radius: 8px; font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; position: relative; cursor: help; }
+    .pill-green { background: rgba(74, 222, 128, 0.05); color: #4ade80; border: 1px solid #4ade8022; }
+    .pill-red { background: rgba(248, 113, 113, 0.05); color: #f87171; border: 1px solid #f8717122; }
+    .pill:hover::after { content: attr(data-reason); position: absolute; left: 0; bottom: 110%; background: #161b22; color: white; padding: 8px; border-radius: 6px; font-size: 0.65rem; width: 200px; z-index: 100; border: 1px solid #30363d; }
+
+    .success-badge { position: absolute; top: 20px; right: 20px; padding: 5px 12px; border-radius: 20px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.75rem; }
+
+    .stButton>button { background: linear-gradient(90deg, #fcd34d 0%, #fbbf24 100%) !important; color: #010409 !important; font-weight: 700; border-radius: 10px; border: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# --- 4. ENGINE CORE (FIXED ERROR HANDLING) ---
+# --- 4. ENGINE CORE ---
 # ==============================================================================
 def process_img(file):
     img = Image.open(file).convert('RGB')
@@ -106,17 +124,20 @@ def process_img(file):
     buf = io.BytesIO(); img.save(buf, format="JPEG", quality=85)
     return base64.b64encode(buf.getvalue()).decode()
 
-def get_analysis(client, b64, ctx, dark):
+def get_analysis(client, b64, ctx, dark, lang):
+    lang_name = "Dutch" if lang == "NL" else "English"
     mode = "DARK OPS" if dark else "CHARISMA"
+    
     prompt = f"""
-    Role: Sovereign Architect ({mode}). Focus on conversation flow.
-    Return ONLY a JSON object:
+    Role: Sovereign Architect ({mode}).
+    IMPORTANT: You must respond entirely in {lang_name}. 
+    Output strictly as JSON:
     {{
       "success_rate": int, 
       "breakdown": {{"vibe": int, "timing": int, "subtext": int}},
-      "green_flags": [{{"label": "string", "reason": "string"}}], 
-      "red_flags": [{{"label": "string", "reason": "string"}}], 
-      "options": [{{"type": "string", "zin": "string", "psychology": "string"}}], 
+      "green_flags": [{{"label": "str", "reason": "str"}}], 
+      "red_flags": [{{"label": "str", "reason": "str"}}], 
+      "options": [{{"type": "str", "zin": "str", "psychology": "str"}}], 
       "winner_idx": int
     }}
     """
@@ -130,21 +151,19 @@ def get_analysis(client, b64, ctx, dark):
                           {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
                       ]}]
         )
-        # Veilig parsen van de JSON
-        content = res.choices[0].message.content
-        return json.loads(content)
-    except Exception as e:
-        st.error(f"Engine Error: {str(e)}")
-        return None
+        return json.loads(res.choices[0].message.content)
+    except: return None
 
 # ==============================================================================
 # --- 5. INTERFACE ASSEMBLY ---
 # ==============================================================================
 if 'state' not in st.session_state: st.session_state.state = None
-t = translations["NL"]
 
 with st.sidebar:
     st.markdown("### ⚙️ SYSTEM")
+    lang_choice = st.selectbox("🌍 Language", options=["NL", "EN"], index=0)
+    t = translations[lang_choice]
+    
     api_key = st.text_input("Grok API Key", type="password")
     is_dark = st.toggle(t["dark_mode"])
     if is_dark: st.markdown(t["dark_warning"], unsafe_allow_html=True)
@@ -153,7 +172,7 @@ with st.sidebar:
 st.markdown(f'<div class="brand-container"><div class="brand-logo">{t["header"]}</div></div>', unsafe_allow_html=True)
 
 if not api_key:
-    st.info("🔐 Voer API-sleutel in.")
+    st.info("🔐 Please enter API Key.")
 else:
     col_l, col_r = st.columns([1, 1.2], gap="large")
 
@@ -163,62 +182,66 @@ else:
             u_file = st.file_uploader("U", type=['png','jpg','jpeg'], label_visibility="collapsed")
         
         if u_file:
-            st.image(u_file, width='stretch') # FIX: width='stretch' ipv use_container_width
+            st.image(u_file, width='stretch')
             u_ctx = st.text_area("C", placeholder=t["ctx_ph"], height=70, label_visibility="collapsed")
             if st.button(t["btn_scan"]):
-                with st.spinner("Decoding Architecture..."):
+                with st.spinner("Processing..."):
                     client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
-                    st.session_state.state = get_analysis(client, process_img(u_file), u_ctx, is_dark)
+                    st.session_state.state = get_analysis(client, process_img(u_file), u_ctx, is_dark, lang_choice)
                     st.rerun()
 
     with col_r:
-        if st.session_state.state and isinstance(st.session_state.state, dict):
+        if st.session_state.state:
             s = st.session_state.state
             st.markdown(f"<div class='section-header'>{t['tag_signals']}</div>", unsafe_allow_html=True)
             f_c1, f_c2 = st.columns(2)
             with f_c1:
                 for gf in s.get('green_flags', []): 
-                    st.markdown(f'<div class="pill pill-green" data-reason="{gf.get("reason", "Geen reden")} Barb">✅ {gf.get("label", "Flag")}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="pill pill-green" data-reason="{gf.get("reason", "")}">✅ {gf.get("label", "")}</div>', unsafe_allow_html=True)
             with f_c2:
                 for rf in s.get('red_flags', []): 
-                    st.markdown(f'<div class="pill pill-red" data-reason="{rf.get("reason", "Geen reden")}">🚩 {rf.get("label", "Flag")}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="pill pill-red" data-reason="{rf.get("reason", "")}">🚩 {rf.get("label", "")}</div>', unsafe_allow_html=True)
             
             rate = int(s.get('success_rate', 0))
             color = "#fcd34d" if rate > 80 else ("#fbbf24" if rate > 60 else "#f87171")
             
             st.markdown(f"<div class='section-header'>{t['tag_pick']}</div>", unsafe_allow_html=True)
-            w_idx = s.get('winner_idx', 0)
-            # Veiligheid tegen index errors
-            if w_idx < len(s['options']):
-                w = s['options'][w_idx]
-                b = s.get('breakdown', {'vibe': 50, 'timing': 50, 'subtext': 50})
-                
-                st.markdown(f"""
-                    <div class="sovereign-card winner-card">
-                        <div class="success-badge" style="border:1px solid {color}; color:{color};">{rate}% HIT RATE</div>
-                        <div style="font-size:1.2rem; font-weight:700; color:white; margin-bottom:15px; padding-right:85px;">"{w.get('zin')}"</div>
-                        <div class="prob-container">
-                            <div class="prob-row"><span>VIBE</span><span>{b['vibe']}%</span></div>
-                            <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b['vibe']}%; background:{color};"></div></div>
-                            <div class="prob-row"><span>TIMING</span><span>{b['timing']}%</span></div>
-                            <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b['timing']}%; background:{color};"></div></div>
-                            <div class="prob-row"><span>SUBTEXT</span><span>{b['subtext']}%</span></div>
-                            <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b['subtext']}%; background:{color};"></div></div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-                st.code(w.get('zin'), language=None)
+            w = s['options'][s.get('winner_idx', 0)]
+            b = s.get('breakdown', {'vibe': 50, 'timing': 50, 'subtext': 50})
             
-            st.markdown(f"<div class='section-header'>{t['tag_dims']}</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+                <div class="sovereign-card winner-card">
+                    <div class="success-badge" style="border:1px solid {color}; color:{color};">{rate}% HIT RATE</div>
+                    <div style="font-size:1.2rem; font-weight:700; color:white; margin-bottom:15px; padding-right:85px;">"{w.get('zin')}"</div>
+                    <div style="font-size:0.75rem; opacity:0.8; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+                        <b>{t['strategy_label']}:</b> {w.get('psychology')}
+                    </div>
+                    <div class="prob-container">
+                        <div class="prob-row"><span>VIBE</span><span>{b['vibe']}%</span></div>
+                        <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b['vibe']}%; background:{color};"></div></div>
+                        <div class="prob-row"><span>TIMING</span><span>{b['timing']}%</span></div>
+                        <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b['timing']}%; background:{color};"></div></div>
+                        <div class="prob-row"><span>SUBTEXT</span><span>{b['subtext']}%</span></div>
+                        <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b['subtext']}%; background:{color};"></div></div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            st.code(w.get('zin'), language=None)
+            
+            st.markdown(f"<div class='section-header' style='margin-top:40px;'>{t['tag_dims']}</div>", unsafe_allow_html=True)
             for i, opt in enumerate(s.get('options', [])):
                 c1, c2 = st.columns([5, 1])
                 with c1:
-                    st.markdown(f'<div class="sovereign-card"><div style="font-size:0.6rem; opacity:0.5; font-family:JetBrains Mono;">{opt["type"]}</div><b>"{opt["zin"]}"</b></div>', unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="sovereign-card" style="margin-bottom:15px;">
+                            <div style="font-size:0.6rem; opacity:0.5; font-family:JetBrains Mono;">{opt["type"]}</div>
+                            <b>"{opt["zin"]}"</b><br>
+                            <small style="opacity:0.7;">{t['tactics_label']}: {opt['psychology']}</small>
+                        </div>
+                    """, unsafe_allow_html=True)
                 with c2:
                     st.write(""); st.button(t["copy_btn"], key=f"c_{i}")
         else:
-            if st.session_state.state is not None:
-                st.error("Data corrupt. Probeer de scan opnieuw.")
             st.info(t["idle_msg"])
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE V10.1 | STABLE REBUILD</div>", unsafe_allow_html=True)
+st.markdown(f"<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE V10.5 | {lang_choice} ACTIVE</div>", unsafe_allow_html=True)
