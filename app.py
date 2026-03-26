@@ -9,7 +9,7 @@ import json
 # --- 1. CORE SYSTEM CONFIGURATION ---
 # ==============================================================================
 st.set_page_config(
-    page_title="Rizz Architect Sovereign v8.5", 
+    page_title="Rizz Architect Sovereign v10.0", 
     page_icon="👑", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -26,19 +26,21 @@ translations = {
         "tag_pick": "🏆 ARCHITECT'S CHOICE",
         "tag_dims": "📐 ALTERNATIEVE DIMENSIES",
         "tag_signals": "📡 SOCIAL SIGNALS",
-        "ctx_ph": "Context: Leeftijd, vibe, laatste interactie...",
+        "ctx_ph": "Context: vibe, laatste bericht, doel...",
         "btn_scan": "⚡ EXECUTE PRECISION SCAN",
         "dark_mode": "🌑 Dark Psychology Mode",
         "reboot": "🔄 SYSTEM REBOOT",
-        "upload_label": "📂 DATA SOURCE (Klik voor upload)",
-        "copy_btn": "📋 Kopieer Antwoord",
-        "idle_msg": "Systeem in stand-by. Upload intel om de architectuur te starten.",
-        "dark_alert_html": """
-            <div style='background: rgba(248, 113, 113, 0.05); border: 1px solid rgba(248, 113, 113, 0.3); 
-                 border-radius: 12px; padding: 15px; color: #f87171; font-size: 0.8rem; 
-                 box-shadow: 0 0 15px rgba(248, 113, 113, 0.05); margin-top: 15px;'>
-                <b style='font-family:JetBrains Mono; letter-spacing:1px;'>⚠️ DARK OPS GEACTIVEERD</b><br>
-                Gevorderde beïnvloedingstechnieken en 'The Takeaway' strategieën geladen.
+        "upload_label": "📂 DATA SOURCE (Screenshot)",
+        "copy_btn": "📋",
+        "idle_msg": "Systeem stand-by. Upload screenshot voor analyse.",
+        "dark_warning": """
+            <div style='background: rgba(248, 113, 113, 0.08); border: 2px solid #f87171; 
+                 border-radius: 12px; padding: 15px; color: #f87171; font-size: 0.75rem; line-height: 1.4; margin-top: 15px;'>
+                <div style='font-size: 1.5rem; margin-bottom: 5px;'>⚖️</div>
+                <b style='font-family:JetBrains Mono; letter-spacing:1px;'>LEGAL DISCLOSURE: DARK OPS</b><br><br>
+                Rizz Architect is een adviserend instrument. Het gebruik is <b>geheel op eigen risico</b>. 
+                Wij zijn niet aansprakelijk voor resultaten of emotionele schade. 
+                De gebruiker kiest en verzendt altijd zelf; wij adviseren slechts (vaak gebrekkig).
             </div>
         """
     }
@@ -55,46 +57,44 @@ st.markdown("""
         background-color: #010409 !important; color: #e2e8f0 !important; font-family: 'Inter', sans-serif; 
     }
 
-    .brand-container { text-align: center; padding: 40px 0; }
-    .brand-logo { font-family: 'Playfair Display', serif; font-size: 3.2rem; color: #ffffff !important; letter-spacing: -2px; }
+    .brand-container { text-align: center; padding: 35px 0; }
+    .brand-logo { font-family: 'Playfair Display', serif; font-size: 3rem; color: #ffffff !important; letter-spacing: -2px; }
     .brand-logo span { color: #fcd34d !important; text-shadow: 0 0 20px rgba(252, 211, 77, 0.4); }
 
-    .archetype-label {
-        font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; text-transform: uppercase;
-        letter-spacing: 1.5px; padding: 3px 10px; border-radius: 4px;
-        background: rgba(252, 211, 77, 0.1); color: #fcd34d; border: 1px solid rgba(252, 211, 77, 0.2);
-        margin-bottom: 10px; display: inline-block;
+    /* Tooltips for Flags */
+    .pill { 
+        display: block; padding: 10px; border-radius: 8px; font-size: 0.7rem; 
+        font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; position: relative; cursor: help;
+    }
+    .pill-green { background: rgba(74, 222, 128, 0.05); color: #4ade80; border: 1px solid #4ade8022; }
+    .pill-red { background: rgba(248, 113, 113, 0.05); color: #f87171; border: 1px solid #f8717122; }
+    .pill:hover::after {
+        content: attr(data-reason); position: absolute; left: 0; bottom: 120%;
+        background: #161b22; color: white; padding: 8px 12px; border-radius: 6px; 
+        font-size: 0.65rem; width: 200px; border: 1px solid rgba(255,255,255,0.1); z-index: 99;
     }
 
-    .section-header {
-        font-family: 'JetBrains Mono', monospace; color: #fcd34d; font-size: 0.7rem;
-        letter-spacing: 3px; margin: 25px 0 12px 0; display: flex; align-items: center;
-        text-transform: uppercase; opacity: 0.6;
+    /* Probability Bars */
+    .prob-container { margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; }
+    .prob-row { display: flex; justify-content: space-between; font-size: 0.65rem; font-family: 'JetBrains Mono'; margin-bottom: 4px; }
+    .prob-bar-bg { background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; width: 100%; margin-bottom: 8px; }
+    .prob-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+
+    .success-badge {
+        position: absolute; top: 20px; right: 20px;
+        padding: 5px 12px; border-radius: 20px;
+        font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.75rem;
     }
-    .section-header::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(252, 211, 77, 0.2), transparent); margin-left: 15px; }
 
     .sovereign-card { 
         background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); 
-        border-radius: 14px; padding: 20px; margin-bottom: 15px; 
+        border-radius: 14px; padding: 20px; margin-bottom: 15px; position: relative;
     }
-    .winner-card { 
-        background: linear-gradient(165deg, rgba(252, 211, 77, 0.08) 0%, rgba(1, 4, 9, 1) 100%); 
-        border: 1px solid #fcd34d; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
-
-    .gauge-container { 
-        background: rgba(255,255,255,0.01); border-radius: 50%; width: 100px; height: 100px; 
-        display: flex; align-items: center; justify-content: center; 
-        border: 3px solid #fcd34d; margin: 10px auto;
-    }
-    
-    .pill { display: block; padding: 10px; border-radius: 8px; font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
-    .pill-green { background: rgba(74, 222, 128, 0.05); color: #4ade80; border: 1px solid #4ade8011; }
-    .pill-red { background: rgba(248, 113, 113, 0.05); color: #f87171; border: 1px solid #f8717111; }
+    .winner-card { border: 2px solid #fcd34d; background: linear-gradient(165deg, rgba(252, 211, 77, 0.08) 0%, rgba(1, 4, 9, 1) 100%); }
 
     .stButton>button { 
         background: linear-gradient(90deg, #fcd34d 0%, #fbbf24 100%) !important; 
-        color: #010409 !important; font-weight: 700; border-radius: 10px; height: 3.2rem; border: none !important;
+        color: #010409 !important; font-weight: 700; border-radius: 10px; border: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -110,7 +110,14 @@ def process_img(file):
 
 def get_analysis(client, b64, ctx, dark):
     mode = "DARK OPS" if dark else "CHARISMA"
-    prompt = f"Role: Sovereign Architect ({mode}). Output JSON: success_rate(int), green_flags(max3), red_flags(max3), options[type(Playful Provocateur/Velvet Charmer/Pattern Interrupt), zin, psychology], winner_idx."
+    prompt = f"""
+    Role: Sovereign Architect ({mode}). Output JSON:
+    success_rate(int), 
+    breakdown {{vibe: int, timing: int, subtext: int}},
+    green_flags(list of {{'label': str, 'reason': str}}), 
+    red_flags(list of {{'label': str, 'reason': str}}), 
+    options[type, zin, psychology], winner_idx.
+    """
     try:
         res = client.chat.completions.create(
             model="grok-4.20-0309-non-reasoning",
@@ -119,10 +126,8 @@ def get_analysis(client, b64, ctx, dark):
                       {"role": "user", "content": [{"type": "text", "text": ctx},
                                                  {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}]}]
         )
-        data = json.loads(res.choices[0].message.content)
-        if data.get('success_rate', 0) < 1.0: data['success_rate'] = int(data['success_rate'] * 100)
-        return data
-    except Exception: return None
+        return json.loads(res.choices[0].message.content)
+    except: return None
 
 # ==============================================================================
 # --- 5. INTERFACE ASSEMBLY ---
@@ -131,15 +136,16 @@ if 'state' not in st.session_state: st.session_state.state = None
 t = translations["NL"]
 
 with st.sidebar:
-    st.markdown("### ⚙️ SETTINGS")
+    st.markdown("### ⚙️ SYSTEM")
     api_key = st.text_input("Grok API Key", type="password")
     is_dark = st.toggle(t["dark_mode"])
+    if is_dark: st.markdown(t["dark_warning"], unsafe_allow_html=True)
     if st.button(t["reboot"]): st.session_state.clear(); st.rerun()
 
 st.markdown(f'<div class="brand-container"><div class="brand-logo">{t["header"]}</div></div>', unsafe_allow_html=True)
 
 if not api_key:
-    st.info("🔐 Toegang geweigerd. Voer API-sleutel in.")
+    st.info("🔐 Voer API-sleutel in.")
 else:
     col_l, col_r = st.columns([1, 1.2], gap="large")
 
@@ -152,26 +158,10 @@ else:
             st.image(u_file, use_container_width=True)
             u_ctx = st.text_area("C", placeholder=t["ctx_ph"], height=70, label_visibility="collapsed")
             if st.button(t["btn_scan"]):
-                with st.spinner("Analyzing Architecture..."):
+                with st.spinner("Decoding..."):
                     client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
                     st.session_state.state = get_analysis(client, process_img(u_file), u_ctx, is_dark)
                     st.rerun()
-        
-        # --- DYNAMISCHE MISSION BRIEFING ---
-        tip_5 = "<b>The Takeaway:</b> Bereidheid om weg te lopen is macht." if is_dark else "<b>Value Offering:</b> Toon een boeiend leven zonder validatie te zoeken."
-        
-        intel_html = f"""
-            <div style='font-size:0.85rem; line-height:1.7; opacity:0.95;'>
-                <div style='margin-bottom:8px;'><span style='color:#fcd34d;'>🎯</span> <b>Frame Control:</b> Jij bepaalt de narratief.</div>
-                <div style='margin-bottom:8px;'><span style='color:#fcd34d;'>💎</span> <b>Anti-Desperation:</b> Schaarste bepaalt jouw waarde.</div>
-                <div style='margin-bottom:8px;'><span style='color:#fcd34d;'>⚓</span> <b>Emotional Anchoring:</b> Word de bron van dopamine.</div>
-                <div style='margin-bottom:8px;'><span style='color:#fcd34d;'>⚖️</span> <b>Push-Pull:</b> Wissel plagen af met oprechte interesse.</div>
-                <div style='margin-bottom:2px;'><span style='color:#fcd34d;'>🚀</span> {tip_5}</div>
-            </div>
-        """
-        st.markdown(f"<div class='section-header'>{t['tag_briefing']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='sovereign-card'>{intel_html}</div>", unsafe_allow_html=True)
-        if is_dark: st.markdown(t["dark_alert_html"], unsafe_allow_html=True)
 
     with col_r:
         if st.session_state.state:
@@ -179,41 +169,46 @@ else:
             st.markdown(f"<div class='section-header'>{t['tag_signals']}</div>", unsafe_allow_html=True)
             f_c1, f_c2 = st.columns(2)
             with f_c1:
-                for gf in s.get('green_flags', []): st.markdown(f"<div class='pill pill-green'>✅ {gf}</div>", unsafe_allow_html=True)
+                for gf in s.get('green_flags', []): 
+                    st.markdown(f'<div class="pill pill-green" data-reason="{gf["reason"]}">✅ {gf["label"]}</div>', unsafe_allow_html=True)
             with f_c2:
-                for rf in s.get('red_flags', []): st.markdown(f"<div class='pill pill-red'>🚩 {rf}</div>", unsafe_allow_html=True)
+                for rf in s.get('red_flags', []): 
+                    st.markdown(f'<div class="pill pill-red" data-reason="{rf["reason"]}">🚩 {rf["label"]}</div>', unsafe_allow_html=True)
             
-            st.markdown(f"<div class='gauge-container'><span style='font-size:1.4rem; font-weight:900;'>{int(s.get('success_rate', 0))}%</span></div>", unsafe_allow_html=True)
-
+            rate = int(s.get('success_rate', 0))
+            color = "#fcd34d" if rate > 80 else ("#fbbf24" if rate > 60 else "#f87171")
+            
             st.markdown(f"<div class='section-header'>{t['tag_pick']}</div>", unsafe_allow_html=True)
             w = s['options'][s.get('winner_idx', 0)]
+            b = s.get('breakdown', {'vibe': 50, 'timing': 50, 'subtext': 50})
+            
             st.markdown(f"""
                 <div class="sovereign-card winner-card">
-                    <div class="archetype-label">{w.get('type')}</div>
-                    <div style="font-size:1.1rem; font-weight:700; color:white; margin-bottom:12px;">"{w.get('zin')}"</div>
-                    <div style="font-size:0.8rem; opacity:0.8; border-top:1px solid rgba(252,211,77,0.2); padding-top:10px;">
-                        <b>ARCHITECT'S NOTE:</b> {w.get('psychology')}
+                    <div class="success-badge" style="border:1px solid {color}; color:{color};">{rate}% HIT RATE</div>
+                    <div style="font-family:'JetBrains Mono'; font-size:0.6rem; opacity:0.6; margin-bottom:5px;">ARCHETYPE</div>
+                    <div style="font-size:1.2rem; font-weight:700; color:white; margin-bottom:15px;">"{w.get('zin')}"</div>
+                    
+                    <div class="prob-container">
+                        <div class="prob-row"><span>VIBE</span><span>{b['vibe']}%</span></div>
+                        <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b['vibe']}%; background:{color};"></div></div>
+                        <div class="prob-row"><span>TIMING</span><span>{b['timing']}%</span></div>
+                        <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b['timing']}%; background:{color};"></div></div>
+                        <div class="prob-row"><span>SUBTEXT</span><span>{b['subtext']}%</span></div>
+                        <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:{b['subtext']}%; background:{color};"></div></div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
             
             st.code(w.get('zin'), language=None)
-
+            
             st.markdown(f"<div class='section-header'>{t['tag_dims']}</div>", unsafe_allow_html=True)
             for i, opt in enumerate(s['options']):
-                if i != s.get('winner_idx', 0):
-                    st.markdown(f"""
-                        <div class="sovereign-card">
-                            <div class="archetype-label" style="opacity:0.7;">{opt.get('type')}</div>
-                            <div style="font-size:0.9rem; font-weight:600; margin:5px 0;">"{opt.get('zin')}"</div>
-                            <div style="font-size:0.75rem; opacity:0.6;"><i>Insight: {opt.get('psychology')}</i></div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                c1, c2 = st.columns([5, 1])
+                with c1:
+                    st.markdown(f'<div class="sovereign-card"><div style="font-size:0.6rem; opacity:0.5; font-family:JetBrains Mono;">{opt["type"]}</div><b>"{opt["zin"]}"</b></div>', unsafe_allow_html=True)
+                with c2:
+                    st.write(""); st.button(t["copy_btn"], key=f"c_{i}")
         else:
             st.info(t["idle_msg"])
 
-# ..............................................................................
-# ..............................................................................
-# ..............................................................................
-st.write("")
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; letter-spacing:2px;'>SOVEREIGN ENGINE V8.5 | ANTI-DARK OPS SHIELD</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE V10.0 | EDUCATIONAL ARCHITECTURE ACTIVE</div>", unsafe_allow_html=True)
