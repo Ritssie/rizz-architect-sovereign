@@ -2,78 +2,82 @@ import streamlit as st
 from openai import OpenAI
 from PIL import Image
 import base64
-import io
 import json
 
 # ==============================================================================
-# --- 1. CONFIG & STYLING ---
+# --- 1. CONFIG & SYSTEM ---
 # ==============================================================================
-st.set_page_config(page_title="RIZZ ARCHITECT v17.0", page_icon="👑", layout="wide")
+st.set_page_config(page_title="RIZZ ARCHITECT v18.5", page_icon="🎯", layout="wide")
 
-if 'state' not in st.session_state: st.session_state.state = None
+# Zorg dat de state altijd een dictionary is om KeyErrors te voorkomen
+if 'state' not in st.session_state or st.session_state.state is None:
+    st.session_state.state = {}
 
 def get_color(val, reverse=False):
-    """Bepaalt kleur op basis van percentage (rood-geel-groen)"""
     if reverse: val = 100 - val
-    if val < 30: return "#ef4444" # Rood
-    if val < 70: return "#facc15" # Geel
-    return "#22c55e" # Groen
+    if val < 30: return "#ef4444"
+    if val < 70: return "#facc15"
+    return "#22c55e"
 
-st.markdown(f"""
+# ==============================================================================
+# --- 2. ELITE UI STYLING ---
+# ==============================================================================
+st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap');
     
-    html, body, [data-testid="stAppViewContainer"] {{ 
-        background-color: #020617 !important; color: #f1f5f9 !important; font-family: 'Inter', sans-serif; 
-    }}
-
-    /* Vaste containers om layout shift te voorkomen */
-    .main-card {{
-        background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(252, 211, 77, 0.2);
-        border-radius: 20px; padding: 25px; min-height: 400px;
-    }}
-
-    /* Alpha Box Styling */
-    .alpha-card {{
-        background: linear-gradient(145deg, #1e1b4b, #020617);
-        border: 2px solid #fcd34d; border-radius: 15px; padding: 25px;
-        margin-bottom: 20px; line-height: 1.6;
-    }}
+    html, body, [data-testid="stAppViewContainer"] { 
+        background-color: #010409 !important; color: #e6edf3 !important; font-family: 'Inter', sans-serif; 
+    }
     
-    .logic-text {{
-        color: #fcd34d; font-size: 0.9rem; font-weight: 600;
-        background: rgba(252, 211, 77, 0.1); padding: 10px; border-radius: 8px; margin-top: 15px;
-    }}
+    .platform-badge {
+        padding: 5px 15px; border-radius: 5px; font-family: 'Orbitron'; font-size: 0.7rem;
+        text-transform: uppercase; margin-bottom: 15px; display: inline-block;
+    }
+    .hinge { background: #8e2de2; color: white; border: 1px solid #ffffff44; }
+    .bumble { background: #ffcb37; color: black; border: 1px solid #00000022; }
+    .tinder { background: #fe3c72; color: white; border: 1px solid #ffffff44; }
 
-    .badge {{
+    .alpha-card {
+        background: rgba(255, 255, 255, 0.03); border: 1px solid #fcd34d66;
+        border-radius: 15px; padding: 20px; margin-bottom: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .logic-box { 
+        font-size: 0.85rem; color: #fcd34d; opacity: 0.9; 
+        margin-top: 10px; font-style: italic; background: rgba(252, 211, 77, 0.05);
+        padding: 8px; border-radius: 5px;
+    }
+    .badge {
         display: inline-block; padding: 4px 12px; border-radius: 20px;
         font-size: 0.75rem; font-weight: bold; margin-right: 5px; margin-bottom: 5px;
         background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-    }}
-
-    .stButton>button {{ border-radius: 10px !important; font-family: 'Orbitron'; font-size: 0.8rem; }}
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# --- 2. CORE ENGINE ---
+# --- 3. ENGINE (Platform Logic) ---
 # ==============================================================================
-def execute_analysis(client, chat_b64, bio_b64, bio_text, ctx, lang, vibe, goal):
-    prompt = f"""Role: Elite Dating Architect. Language: {lang}. 
-    Goal: {goal}. Vibe: {vibe}. 
-    Provide analysis and two distinct response types:
-    1. Fast Move (Short, snappy, punchy)
-    2. Deep Move (Contextual, longer, woven with bio/chat details)
+def run_analysis(client, chat_b64, bio_b64, bio_text, ctx, vibe, platform):
+    prompt = f"""Role: Sovereign Dating Architect. Platform: {platform}.
+    Analyze Chat + Bio. If Hinge, analyze prompts. If Bumble, focus on the opener.
+    Respond in Dutch. Style: {vibe}.
     
-    Return JSON: {{
-        "sentiment_score": int, "ghost_risk": int, "success_rate": int,
-        "sentiment_label": "Cold/Warm/Hot",
-        "tags": [str], "bio_insights": [str],
+    STRICT JSON Output:
+    {{
+        "detected_platform": "Hinge/Bumble/Tinder",
+        "detected_interests": ["str"],
+        "sentiment_label": "str",
+        "ghost_risk": int,
+        "success_rate": int,
+        "tags": ["str"],
         "fast_move": {{"zin": "str", "logic": "str"}},
-        "deep_move": {{"zin": "str", "logic": "str"}}
+        "deep_move": {{"zin": "str", "logic": "str"}},
+        "platform_tip": "str"
     }}"""
     
-    msg_content = [{"type": "text", "text": f"Context: {ctx}. Bio info: {bio_text}"}]
+    msg_content = [{"type": "text", "text": f"Ctx: {ctx}. Manual Bio: {bio_text}"}]
     if chat_b64: msg_content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{chat_b64}"}})
     if bio_b64: msg_content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{bio_b64}"}})
 
@@ -84,88 +88,86 @@ def execute_analysis(client, chat_b64, bio_b64, bio_text, ctx, lang, vibe, goal)
             messages=[{"role": "system", "content": prompt}, {"role": "user", "content": msg_content}]
         )
         return json.loads(res.choices[0].message.content)
-    except: return None
+    except Exception as e:
+        return {"error": str(e)}
 
 # ==============================================================================
-# --- 3. UI ASSEMBLY ---
+# --- 4. UI ASSEMBLY ---
 # ==============================================================================
-st.markdown("<h1 style='text-align:center; font-family:Orbitron; color:#fff;'>RIZZ<span style='color:#fcd34d;'>ARCHITECT</span> PRO</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; font-family:Orbitron; color:#fcd34d;'>RIZZ<span>ARCHITECT</span> v18.5</h1>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### 🛠️ OPERATION COMMAND")
+    st.markdown("### 🛰️ GLOBAL SETTINGS")
     api_key = st.text_input("Grok API Key", type="password")
-    vibe = st.select_slider("Persona Vibe", ["Funny", "Mysterious", "Alpha"])
-    goal = st.selectbox("Strategic Goal", ["The Hook", "The Bridge", "The Close"])
+    platform_hint = st.selectbox("Target Platform", ["Auto-Detect", "Hinge", "Bumble", "Tinder"])
+    vibe_style = st.select_slider("Vibe", ["Playful", "Alpha", "Mysterious"])
     st.markdown("---")
-    if st.button("🔄 SYSTEM RESET"):
-        st.session_state.state = None
+    if st.button("RESET ENGINE"): 
+        st.session_state.state = {}
         st.rerun()
 
-# --- INPUT SECTION ---
-col_in, col_out = st.columns([1, 1.3], gap="large")
+col_left, col_right = st.columns([1, 1.2], gap="large")
 
-with col_in:
+with col_left:
     st.markdown("#### 📥 DATA INGESTION")
-    u_chat = st.file_uploader("Chat Screenshot", type=['png','jpg','jpeg'])
-    u_bio = st.file_uploader("Bio Screenshot (Optional)", type=['png','jpg','jpeg'])
-    u_bio_text = st.text_area("Bio Text / Interests", placeholder="Sushi, Techno, Dogs...", height=68)
-    u_ctx = st.text_input("Extra Context", placeholder="e.g. She's being short with me")
+    u_chat = st.file_uploader("Upload Chat", type=['png','jpg','jpeg'])
+    u_bio = st.file_uploader("Upload Bio Screenshot", type=['png','jpg','jpeg'])
+    u_bio_text = st.text_area("Manual Bio Info", placeholder="e.g. She likes traveling...", height=70)
     
-    if st.button("⚡ START NEURAL SCAN"):
+    if st.button("⚡ EXECUTE NEURAL SCAN"):
         if not api_key: st.error("API Key Required")
         else:
-            with st.spinner("Processing Signals..."):
+            with st.status("Analyzing Patterns...", expanded=True):
                 client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
-                chat_b = base64.b64encode(u_chat.getvalue()).decode() if u_chat else None
-                bio_b = base64.b64encode(u_bio.getvalue()).decode() if u_bio else None
-                st.session_state.state = execute_analysis(client, chat_b, bio_b, u_bio_text, u_ctx, "NL", vibe, goal)
+                c_b64 = base64.b64encode(u_chat.getvalue()).decode() if u_chat else None
+                b_b64 = base64.b64encode(u_bio.getvalue()).decode() if u_bio else None
+                st.session_state.state = run_analysis(client, c_b64, b_b64, u_bio_text, "Dating", vibe_style, platform_hint)
                 st.rerun()
 
-# --- OUTPUT SECTION ---
-with col_out:
-    # Placeholder container om verspringing te voorkomen
-    with st.container():
-        if st.session_state.state:
-            s = st.session_state.state
-            
-            # 1. Metrics & Gauges (Dynamische Kleuren)
-            st.markdown("#### 📡 TACTICAL SIGNALS")
-            c1, c2, c3 = st.columns(3)
-            
-            # Kleur-logica voor metrics
-            s_color = get_color(s.get('success_rate', 0))
-            g_color = get_color(s.get('ghost_risk', 0), reverse=True)
-            
-            c1.markdown(f"<div style='text-align:center;'><small>SENTIMENT</small><br><b style='font-size:1.2rem; color:#fcd34d;'>{s.get('sentiment_label')}</b></div>", unsafe_allow_html=True)
-            c2.markdown(f"<div style='text-align:center;'><small>GHOST RISK</small><br><b style='font-size:1.2rem; color:{g_color};'>{s.get('ghost_risk')}%</b></div>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='text-align:center;'><small>HIT RATE</small><br><b style='font-size:1.2rem; color:{s_color};'>{s.get('success_rate')}%</b></div>", unsafe_allow_html=True)
+with col_right:
+    s = st.session_state.state
+    if s and "error" not in s and s != {}:
+        # Platform Display
+        p_name = s.get('detected_platform', 'Tinder').lower()
+        st.markdown(f"<div class='platform-badge {p_name}'>{p_name} Detected</div>", unsafe_allow_html=True)
+        
+        # Metrics
+        c1, c2, c3 = st.columns(3)
+        g_color = get_color(s.get('ghost_risk', 0), reverse=True)
+        s_color = get_color(s.get('success_rate', 0))
+        
+        c1.metric("Sentiment", s.get('sentiment_label', 'Neutral'))
+        c2.markdown(f"<small>GHOST RISK</small><br><b style='color:{g_color}; font-size:1.2rem;'>{s.get('ghost_risk', 0)}%</b>", unsafe_allow_html=True)
+        c3.markdown(f"<small>HIT RATE</small><br><b style='color:{s_color}; font-size:1.2rem;'>{s.get('success_rate', 0)}%</b>", unsafe_allow_html=True)
 
-            # 2. Visual Tags (Badges)
-            st.markdown("<div style='margin-top:15px;'>", unsafe_allow_html=True)
-            for tag in s.get('tags', []): st.markdown(f"<span class='badge'>⚡ {tag}</span>", unsafe_allow_html=True)
-            for bio in s.get('bio_insights', []): st.markdown(f"<span class='badge' style='border-color:#fcd34d;'>📍 {bio}</span>", unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+        # Tags
+        st.markdown("<div style='margin: 10px 0;'>", unsafe_allow_html=True)
+        for tag in s.get('tags', []): st.markdown(f"<span class='badge'>⚡ {tag}</span>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-            # 3. The Alpha Selections (Two Variants)
-            st.markdown("---")
-            
-            # Fast Move (Short)
-            st.markdown("### 🏆 FAST MOVE (Snappy)")
-            st.markdown(f"""<div class='alpha-card'>
-                <h2 style='color:white; margin:0;'>"{s['fast_move']['zin']}"</h2>
-                <div class='logic-text'><b>Architect's Logic:</b> {s['fast_move']['logic']}</div>
-            </div>""", unsafe_allow_html=True)
-            if st.button("📋 COPY FAST MOVE"): st.toast("Fast Move Copied!")
+        if s.get('platform_tip'):
+            st.info(f"💡 **Platform Tip:** {s['platform_tip']}")
 
-            # Deep Move (Contextual)
-            st.markdown("### 🧠 DEEP MOVE (Contextual)")
-            st.markdown(f"""<div class='alpha-card'>
-                <h2 style='color:white; margin:0;'>"{s['deep_move']['zin']}"</h2>
-                <div class='logic-text'><b>Architect's Logic:</b> {s['deep_move']['logic']}</div>
-            </div>""", unsafe_allow_html=True)
-            if st.button("📋 COPY DEEP MOVE"): st.toast("Deep Move Copied!")
-            
-        else:
-            st.info("System Standby. Upload tactical data to initialize neural processing.")
+        # Output Cards (Bulletproofed with .get)
+        fast = s.get('fast_move', {"zin": "No data", "logic": "N/A"})
+        deep = s.get('deep_move', {"zin": "No data", "logic": "N/A"})
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SOVEREIGN v17.0 // FINAL STABLE // MOBILE OPTIMIZED</div>", unsafe_allow_html=True)
+        st.markdown("### 🏆 FAST MOVE")
+        st.markdown(f"""<div class='alpha-card'>
+            <h2 style='color:white; margin:0;'>"{fast.get('zin')}"</h2>
+            <div class='logic-box'><b>Logic:</b> {fast.get('logic')}</div>
+        </div>""", unsafe_allow_html=True)
+        if st.button("📋 Copy Fast"): st.toast("Copied!")
+
+        st.markdown("### 🧠 DEEP MOVE")
+        st.markdown(f"""<div class='alpha-card' style='border-color:#8e2de2;'>
+            <h2 style='color:white; margin:0;'>"{deep.get('zin')}"</h2>
+            <div class='logic-box'><b>Logic:</b> {deep.get('logic')}</div>
+        </div>""", unsafe_allow_html=True)
+        if st.button("📋 Copy Deep"): st.toast("Copied!")
+    elif "error" in s:
+        st.error(f"AI Error: {s['error']}")
+    else:
+        st.info("System stand-by. Initialiseer scan.")
+
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SOVEREIGN v18.5 // BULLETPROOF ENGINE</div>", unsafe_allow_html=True)
