@@ -7,7 +7,7 @@ import json
 
 # --- 1. CORE CONFIGURATION ---
 st.set_page_config(
-    page_title="Rizz Architect Sovereign v6.3.1", 
+    page_title="Rizz Architect Sovereign v6.3.2", 
     page_icon="👑", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -118,7 +118,6 @@ st.markdown("""
         font-size: 0.85rem;
     }
 
-    /* Fix voor afgeronde hoeken bij afbeeldingen */
     [data-testid="stImage"] img {
         border-radius: 12px;
         border: 1px solid rgba(255,255,255,0.1);
@@ -160,7 +159,21 @@ def process_img(file):
 
 def get_architect_response(client, b64, ctx, lang, dark):
     mode = "PSYCHOLOGICAL DARK OPS" if dark else "ELITE SOCIAL CHARISMA"
-    prompt = f"Role: Sovereign Architect. Mode: {mode}. Language: {lang}. Output JSON only."
+    # STRICT JSON FORMATTING IN PROMPT
+    prompt = f"""Role: Sovereign Architect. Mode: {mode}. Language: {lang}. 
+    Analyze the chat and return ONLY a JSON object with this EXACT structure:
+    {{
+      "success_rate": 0-100,
+      "green_flags": ["string"],
+      "red_flags": ["string"],
+      "psychology": "Analysis text",
+      "options": [
+        {{"type": "🎭 Playful", "zin": "text"}},
+        {{"type": "🎯 Direct", "zin": "text"}},
+        {{"type": "⚡ Pattern Break", "zin": "text"}}
+      ],
+      "winner_idx": 0
+    }}"""
     
     res = client.chat.completions.create(
         model="grok-4.20-0309-non-reasoning",
@@ -184,7 +197,7 @@ with st.sidebar:
     t = translations[l_key]
     api_key = st.text_input("Grok API Key", type="password")
     st.markdown("---")
-    is_dark = st.toggle(t["dark_mode"], key="dt_toggle")
+    is_dark = st.toggle(t["dark_mode"], key="dt_stable")
     if st.button(t["reboot"]):
         st.session_state.clear()
         st.rerun()
@@ -199,7 +212,7 @@ else:
 
     with col_l:
         st.markdown(f"<div class='section-header'>{t['tag_intake']}</div>", unsafe_allow_html=True)
-        u_file = st.file_uploader("Screenshot", type=['png','jpg','jpeg'], label_visibility="collapsed")
+        u_file = st.file_uploader("Screenshot", type=['png','jpg','jpeg'], key="uploader_stable", label_visibility="collapsed")
         
         if u_file:
             st.image(u_file, use_container_width=True)
@@ -212,7 +225,6 @@ else:
                         st.rerun()
                     except Exception as e: st.error(f"Error: {e}")
         
-        # Briefing Card
         st.markdown(f"<div class='section-header'>{t['tag_briefing']}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='sovereign-card'>{t['intel_main']}</div>", unsafe_allow_html=True)
         
@@ -223,45 +235,51 @@ else:
         if st.session_state.state:
             s = st.session_state.state
             
-            # Probability Card
-            st.markdown(f"<div class='section-header'>SLAGINGSKANS</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='sovereign-card' style='padding: 15px 24px;'><div style='font-size:1.5rem; font-weight:800; color:#fcd34d;'>{s.get('success_rate', 50)}%</div></div>", unsafe_allow_html=True)
-            
-            # Winner Card
-            st.markdown(f"<div class='section-header'>{t['tag_pick']}</div>", unsafe_allow_html=True)
-            best = s['options'][s.get('winner_idx', 0)]
-            st.markdown(f"""
-                <div class="sovereign-card winner-card">
-                    <div class="badge-gold">OPTIMAL TRAJECTORY</div>
-                    <div style="font-family:'JetBrains Mono'; color:#94a3b8; font-size:0.75rem; margin-bottom:8px;">{best.get('type')}</div>
-            """, unsafe_allow_html=True)
-            st.code(best.get('zin'), language=None)
-            st.markdown(f"""
-                    <div style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(252,211,77,0.2); font-size:0.85rem; color:#fcd34d;">
-                        <b>PSYCHOLOGISCHE LOGICA:</b><br>{s.get('psychology')}
+            # --- FAILSAFE CHECK ---
+            if "options" in s and len(s["options"]) > 0:
+                # Probability
+                st.markdown(f"<div class='section-header'>SLAGINGSKANS</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='sovereign-card' style='padding: 15px 24px;'><div style='font-size:1.5rem; font-weight:800; color:#fcd34d;'>{s.get('success_rate', 50)}%</div></div>", unsafe_allow_html=True)
+                
+                # Winner
+                st.markdown(f"<div class='section-header'>{t['tag_pick']}</div>", unsafe_allow_html=True)
+                w_idx = s.get('winner_idx', 0)
+                best = s['options'][w_idx]
+                
+                st.markdown(f"""
+                    <div class="sovereign-card winner-card">
+                        <div class="badge-gold">OPTIMAL TRAJECTORY</div>
+                        <div style="font-family:'JetBrains Mono'; color:#94a3b8; font-size:0.75rem; margin-bottom:8px;">{best.get('type')}</div>
+                """, unsafe_allow_html=True)
+                st.code(best.get('zin'), language=None)
+                st.markdown(f"""
+                        <div style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(252,211,77,0.2); font-size:0.85rem; color:#fcd34d;">
+                            <b>PSYCHOLOGISCHE LOGICA:</b><br>{s.get('psychology')}
+                        </div>
                     </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # Flags & Dims Split
-            f_col1, f_col2 = st.columns(2)
-            with f_col1:
-                st.markdown(f"<div class='section-header'>SIGNALEN</div>", unsafe_allow_html=True)
-                for gf in s.get('green_flags', []): st.markdown(f"<div class='flag-pill pill-green'>✅ {gf}</div>", unsafe_allow_html=True)
-                for rf in s.get('red_flags', []): st.markdown(f"<div class='flag-pill pill-red'>🚩 {rf}</div>", unsafe_allow_html=True)
-            
-            with f_col2:
-                st.markdown(f"<div class='section-header'>{t['tag_dims']}</div>", unsafe_allow_html=True)
-                for i, opt in enumerate(s['options']):
-                    if i != s.get('winner_idx', 0):
-                        st.markdown(f"""
-                            <div class="sovereign-card" style="padding:15px; margin-bottom:10px;">
-                                <div style="font-size:0.7rem; font-family:'JetBrains Mono'; opacity:0.6;">{opt.get('type')}</div>
-                                <div style="font-size:0.85rem; margin-top:5px;">{opt.get('zin')}</div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+                
+                # Flags & Dims
+                f_col1, f_col2 = st.columns(2)
+                with f_col1:
+                    st.markdown(f"<div class='section-header'>SIGNALEN</div>", unsafe_allow_html=True)
+                    for gf in s.get('green_flags', []): st.markdown(f"<div class='flag-pill pill-green'>✅ {gf}</div>", unsafe_allow_html=True)
+                    for rf in s.get('red_flags', []): st.markdown(f"<div class='flag-pill pill-red'>🚩 {rf}</div>", unsafe_allow_html=True)
+                
+                with f_col2:
+                    st.markdown(f"<div class='section-header'>{t['tag_dims']}</div>", unsafe_allow_html=True)
+                    for i, opt in enumerate(s['options']):
+                        if i != w_idx:
+                            st.markdown(f"""
+                                <div class="sovereign-card" style="padding:15px; margin-bottom:10px;">
+                                    <div style="font-size:0.7rem; font-family:'JetBrains Mono'; opacity:0.6;">{opt.get('type')}</div>
+                                    <div style="font-size:0.85rem; margin-top:5px;">{opt.get('zin')}</div>
+                                </div>
+                            """, unsafe_allow_html=True)
+            else:
+                st.error("AI Response Format Error. Please try again.")
         else:
             st.info("System stand-by. Waiting for tactical input.")
 
 # --- 6. FOOTER ---
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE v6.3.1 | STABLE RELEASE</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN v6.3.2 | BUG-FIXED & STABLE</div>", unsafe_allow_html=True)
