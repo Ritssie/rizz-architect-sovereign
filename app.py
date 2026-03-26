@@ -9,7 +9,7 @@ import json
 # --- 1. CORE SYSTEM CONFIGURATION ---
 # ==============================================================================
 st.set_page_config(
-    page_title="Rizz Architect Sovereign v10.6", 
+    page_title="Rizz Architect Sovereign v10.7", 
     page_icon="👑", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -28,13 +28,12 @@ translations = {
         "ctx_ph": "Context: vibe, laatste bericht, doel...",
         "btn_scan": "⚡ START ANALYSE",
         "dark_mode": "🌑 Dark Psychology Mode",
-        "reboot": "🔄 SYSTEEM REBOOT",
+        "reboot": "🔄 RESET SYSTEEM",
         "upload_label": "📂 DATA SOURCE (Screenshot)",
         "copy_btn": "📋",
         "idle_msg": "Systeem stand-by. Upload screenshot.",
         "lang_label": "🌍 Taal / Language",
         "strategy_label": "STRATEGIE",
-        "tactics_label": "Tactiek",
         "legal_title": "⚖️ JURIDISCHE DISCLAIMER"
     },
     "EN": {
@@ -46,13 +45,12 @@ translations = {
         "ctx_ph": "Context: vibe, last message, goal...",
         "btn_scan": "⚡ EXECUTE SCAN",
         "dark_mode": "🌑 Dark Psychology Mode",
-        "reboot": "🔄 SYSTEM REBOOT",
+        "reboot": "🔄 RESET SYSTEM",
         "upload_label": "📂 DATA SOURCE (Screenshot)",
         "copy_btn": "📋",
         "idle_msg": "System on standby. Upload screenshot.",
         "lang_label": "🌍 Language / Taal",
         "strategy_label": "STRATEGY",
-        "tactics_label": "Tactics",
         "legal_title": "⚖️ LEGAL DISCLOSURE"
     }
 }
@@ -98,7 +96,13 @@ st.markdown("""
         border-radius: 10px; padding: 12px; color: #f87171; font-size: 0.7rem; line-height: 1.4;
     }
 
+    /* Knoppen Styling */
     .stButton>button { background: linear-gradient(90deg, #fcd34d 0%, #fbbf24 100%) !important; color: #010409 !important; font-weight: 700; border-radius: 8px; border: none !important; }
+    
+    /* Danger Button override */
+    div[data-testid="stSidebar"] .stButton>button { 
+        border: 1px solid rgba(248, 113, 113, 0.3) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -112,7 +116,7 @@ def process_img(file):
     return base64.b64encode(buf.getvalue()).decode()
 
 def get_analysis(client, b64, ctx, dark, lang):
-    prompt = f"Role: Sovereign Architect. Respond entirely in {'Dutch' if lang=='NL' else 'English'}. Return JSON: success_rate(int), breakdown{{vibe, timing, subtext}}, green_flags, red_flags, options, winner_idx."
+    prompt = f"Role: Sovereign Architect. Respond entirely in {'Dutch' if lang=='NL' else 'English'}. JSON: success_rate(int), breakdown{{vibe, timing, subtext}}, green_flags, red_flags, options, winner_idx."
     try:
         res = client.chat.completions.create(
             model="grok-4.20-0309-non-reasoning",
@@ -136,33 +140,33 @@ with st.sidebar:
     api_key = st.text_input("Grok API Key", type="password")
     is_dark = st.toggle(t["dark_mode"])
     
-    # --- DE GEFIXTE SIDEBAR SCHEIDING ---
-    st.markdown("<br><br>", unsafe_allow_html=True) # Extra witruimte
-    st.divider() # Visuele lijn
+    # --- SIDEBAR SCHEIDING ---
+    st.markdown("<br><br><br>", unsafe_allow_html=True) 
+    st.divider() 
     
     st.markdown(f"""
         <div class="legal-box">
             <b>{t['legal_title']}</b><br><br>
-            Gebruik op eigen risico. Wij zijn niet aansprakelijk voor resultaten of emotionele schade. 
-            Jij bent de verzender.
+            Gebruik is op eigen risico. Wij aanvaarden geen aansprakelijkheid voor interacties.
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button(t["reboot"], use_container_width=True):
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    # Reboot knop onderaan met een specifieke kleurinstelling
+    if st.button(t["reboot"], use_container_width=True, type="secondary"):
         st.session_state.clear()
         st.rerun()
 
 st.markdown(f'<div class="brand-container"><div class="brand-logo">{t["header"]}</div></div>', unsafe_allow_html=True)
 
 if not api_key:
-    st.info("🔐 Please enter API Key in the sidebar.")
+    st.info("🔐 Voer je API-key in de sidebar in.")
 else:
     col_l, col_r = st.columns([1, 1.2], gap="large")
 
     with col_l:
         st.markdown(f"<div class='section-header'>{t['tag_intake']}</div>", unsafe_allow_html=True)
-        u_file = st.file_uploader(t["upload_label"], type=['png','jpg','jpeg'])
+        u_file = st.file_uploader(t["upload_label"], type=['png','jpg','jpeg'], label_visibility="collapsed")
         if u_file:
             st.image(u_file, width='stretch')
             u_ctx = st.text_area("Context", placeholder=t["ctx_ph"], height=80)
@@ -176,7 +180,6 @@ else:
         if st.session_state.state:
             s = st.session_state.state
             
-            # --- SIGNALS ---
             st.markdown(f"<div class='section-header'>{t['tag_signals']}</div>", unsafe_allow_html=True)
             sc1, sc2 = st.columns(2)
             with sc1:
@@ -184,34 +187,34 @@ else:
             with sc2:
                 for rf in s.get('red_flags', []): st.markdown(f'<div class="pill pill-red">🚩 {rf.get("label", rf)}</div>', unsafe_allow_html=True)
             
-            # --- WINNER CARD ---
+            # --- WINNER CARD FIX ---
             st.markdown(f"<div class='section-header'>{t['tag_pick']}</div>", unsafe_allow_html=True)
             w = s['options'][s.get('winner_idx', 0)]
+            # SAFE GET voor breakdown om Traceback te voorkomen
             b = s.get('breakdown', {'vibe': 50, 'timing': 50, 'subtext': 50})
             rate = s.get('success_rate', 0)
             color = "#fcd34d" if rate > 75 else "#f87171"
 
             st.markdown(f"""
                 <div class="sovereign-card winner-card">
-                    <div class="success-badge" style="border:1px solid {color}; color:{color}; background:rgba(0,0,0,0.3);">
+                    <div class="success-badge" style="border:1px solid {color}; color:{color}; background:rgba(0,0,0,0.4);">
                         {rate}% HIT RATE
                     </div>
-                    <div style="font-size:1.2rem; font-weight:700; margin-bottom:15px; padding-right:100px; line-height:1.4;">
+                    <div style="font-size:1.2rem; font-weight:700; margin-bottom:15px; padding-right:110px; line-height:1.4; color:white;">
                         "{w.get('zin')}"
                     </div>
                     <div style="font-size:0.8rem; opacity:0.8; margin-bottom:15px;">
-                        <b>{t['strategy_label']}:</b> {w.get('psychology')}
+                        <b style="color:{color};">{t['strategy_label']}:</b> {w.get('psychology')}
                     </div>
                     <div class="prob-container">
-                        <div class="prob-row"><span>VIBE</span><span style="color:{color}">{b['vibe']}%</span></div>
-                        <div class="prob-row"><span>TIMING</span><span style="color:{color}">{b['timing']}%</span></div>
-                        <div class="prob-row"><span>SUBTEXT</span><span style="color:{color}">{b['subtext']}%</span></div>
+                        <div class="prob-row"><span style="opacity:0.6;">VIBE</span><span style="font-weight:700;">{b.get('vibe', 0)}%</span></div>
+                        <div class="prob-row"><span style="opacity:0.6;">TIMING</span><span style="font-weight:700;">{b.get('timing', 0)}%</span></div>
+                        <div class="prob-row"><span style="opacity:0.6;">SUBTEXT</span><span style="font-weight:700;">{b.get('subtext', 0)}%</span></div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
             st.code(w.get('zin'), language=None)
             
-            # --- ALTERNATIVES ---
             st.markdown(f"<div class='section-header' style='margin-top:40px;'>{t['tag_dims']}</div>", unsafe_allow_html=True)
             for i, opt in enumerate(s.get('options', [])):
                 if i != s.get('winner_idx', 0):
@@ -223,4 +226,4 @@ else:
         else:
             st.info(t["idle_msg"])
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE V10.6</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.6rem; margin-top:50px;'>SOVEREIGN ENGINE V10.7 | STABLE</div>", unsafe_allow_html=True)
