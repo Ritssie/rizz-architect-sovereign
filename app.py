@@ -5,175 +5,160 @@ import json
 import time
 
 # ==============================================================================
-# --- 1. CONFIG & CYBERPUNK STYLING (Feedback 2 & 4) ---
+# --- 1. CONFIG & NEON UI ---
 # ==============================================================================
-st.set_page_config(page_title="RIZZ ARCHITECT OS", page_icon="📟", layout="wide")
+st.set_page_config(page_title="RIZZ ARCHITECT v21.0", page_icon="⚖️", layout="wide")
 
-# Custom CSS voor Monospace, Scherpe hoeken en Neon effecten
+if 'state' not in st.session_state: st.session_state.state = None
+
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap');
     
-    /* Forceer Dark Mode & Font */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-        background-color: #050505 !important;
-        color: #00ff41 !important; /* Classic Matrix/Hacker Groen */
-        font-family: 'Share Tech Mono', monospace !important;
+    html, body, [data-testid="stAppViewContainer"] { 
+        background-color: #030712 !important; color: #f8fafc !important; font-family: 'Inter', sans-serif; 
     }
 
-    /* Hoekig Design: Geen ronde hoeken (Feedback 2) */
-    div.stButton > button, div[data-testid="stTextArea"] textarea, .stSelectbox, .alpha-box {
-        border-radius: 0px !important;
-        border: 1px solid #1e293b !important;
-        text-transform: uppercase;
+    /* Permanente Containers voor Zero-Shift */
+    .skeleton-container {
+        background: rgba(255,255,255,0.02); border: 1px dashed #30363d;
+        border-radius: 12px; padding: 20px; margin-bottom: 20px; min-height: 100px;
     }
 
-    /* Status Balk bovenaan (Feedback 4) */
-    .status-bar {
-        background: #111;
-        padding: 5px 20px;
-        border-bottom: 2px solid #00ff41;
-        font-size: 0.7rem;
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px;
-    }
+    .flag-card { padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.85rem; }
+    .green-flag { background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; color: #4ade80; }
+    .red-flag { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #f87171; }
 
-    /* Neon Progress Bars (Feedback 2) */
-    .stProgress > div > div > div > div {
-        background-color: #00ff41 !important; /* Default groen */
-        border-radius: 0px;
+    .glow-card {
+        background: #0f172a; border: 1px solid #1e293b; border-radius: 15px;
+        padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
-
-    /* Custom Cards voor de moves */
-    .alpha-box {
-        background: #0a0a0a;
-        padding: 20px;
-        margin-bottom: 20px;
-        border-left: 5px solid #00ff41 !important;
-    }
+    .flame-mode { border: 1px solid #f59e0b !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.2) !important; }
     
-    /* Verberg standaard Streamlit elementen voor meer immersie */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    .stMetric { background: #1e293b; padding: 15px; border-radius: 10px; border: 1px solid #334155; }
     </style>
-    
-    <div class="status-bar">
-        <span>STATUS: SYSTEM ACTIVE</span>
-        <span>ENCRYPTION: AES-256</span>
-        <span>LOCATION: [LOCAL_NODE_MOCKED]</span>
-    </div>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# --- 2. LOGIC & SESSION STATE (Feedback 1) ---
+# --- 2. STRATEGIC ENGINE (Logic & Constraints) ---
 # ==============================================================================
-if 'history' not in st.session_state:
-    st.session_state.history = []
+def run_strategic_scan(client, chat_b64, bio_text, vibe, platform):
+    # Harde limitatie op vraagtekens voor offensieve modi
+    constraint = ""
+    if vibe in ["Alpha", "The Flame", "Counter-Rizz"]:
+        constraint = "STRICT: NO question marks (?) allowed. Use statements, teases, or cold reads."
 
-def run_sovereign_scan(client, chat_b64, bio_text, vibe, plat, sarcasm):
-    # Prompt aanpassing op basis van Sarcasme slider (Feedback 5)
-    tone_instruction = f"Tone: {vibe}. Sarcasm level: {sarcasm}/10."
+    prompt = f"""Role: Sovereign Dating Architect. Platform: {platform}. Vibe: {vibe}.
+    {constraint}
+    Analyze the conversation for behavioral signals (Red/Green flags).
+    Generate 2 strategic moves in Dutch:
+    1. The Tactical Move (Maintenance/Bridge)
+    2. The Power Move (Escalation/The Close/Counter-Rizz)
     
-    prompt = f"""Role: Elite Dating Architect. Platform: {plat}. {tone_instruction}
-    Return JSON ONLY: {{
+    Return JSON: {{
         "metrics": {{"warmth": int, "tension": int, "risk": int}},
-        "flags": {{"green": ["str"], "red": ["str"]}},
-        "note": "str",
+        "green_flags": ["signal 1", "signal 2"],
+        "red_flags": ["signal 1", "signal 2"],
+        "note": "Analysis matching the percentages",
         "moves": [
             {{"type": "Tactical", "zin": "str", "logic": "str"}},
             {{"type": "Power", "zin": "str", "logic": "str"}}
         ]
     }}"""
     
-    msg = [{"type": "text", "text": f"Context: {bio_text}"}]
+    msg = [{"type": "text", "text": f"Bio Context: {bio_text}"}]
     if chat_b64:
         msg.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{chat_b64}"}})
 
     try:
         res = client.chat.completions.create(
-            model="gpt-4o", # Of grok-beta/v3 indien beschikbaar
+            model="grok-4.20-0309-non-reasoning",
             response_format={"type": "json_object"},
             messages=[{"role": "system", "content": prompt}, {"role": "user", "content": msg}]
         )
-        data = json.loads(res.choices[0].message.content)
-        # Sla op in geschiedenis (Feedback 1)
-        st.session_state.history.insert(0, data)
-        if len(st.session_state.history) > 3: st.session_state.history.pop()
-        return data
-    except Exception as e:
-        st.error(f"SYSTEM ERROR: {e}")
-        return None
+        return json.loads(res.choices[0].message.content)
+    except: return None
 
 # ==============================================================================
-# --- 3. UI LAYOUT (Feedback 4: Split-Screen) ---
+# --- 3. UI ASSEMBLY ---
 # ==============================================================================
-st.title("RIZZ_ARCHITECT.EXE")
+st.markdown("<h1 style='text-align:center; font-family:Orbitron; color:#fcd34d;'>RIZZ<span>ARCHITECT</span> v21</h1>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### 🖥️ COMMAND_INPUT")
-    api_key = st.text_input("ACCESS_TOKEN (API KEY)", type="password")
-    vibe_mode = st.selectbox("VIBE_PROFILE", ["Funny", "Mysterious", "Alpha", "The Flame"])
-    sarcasm_level = st.slider("SARCASM_THRESHOLD", 0, 10, 5) # Feedback 5
+    st.markdown("### 🎚️ STRATEGIC CONTROL")
+    api_key = st.text_input("Grok API Key", type="password")
+    plat = st.selectbox("Platform", ["Tinder", "Bumble", "Hinge"])
+    vibe = st.selectbox("Current Vibe", ["Funny", "Alpha", "The Flame", "Counter-Rizz"])
     st.markdown("---")
-    u_chat = st.file_uploader("UPLOAD_INTEL (.JPG, .PNG)", type=['png','jpg','jpeg'])
-    u_bio = st.text_area("BIO_DATA", placeholder="Paste bio or profile details here...")
+    if st.button("RESET SYSTEM"): 
+        st.session_state.state = None
+        st.rerun()
 
-    if st.button("⚡ INITIALIZE_SCAN"):
-        if api_key and u_chat:
-            with st.spinner("DECRYPTING DATA..."):
-                client = OpenAI(api_key=api_key)
-                c_b64 = base64.b64encode(u_chat.getvalue()).decode()
-                st.session_state.current_scan = run_sovereign_scan(client, c_b64, u_bio, vibe_mode, "Tinder", sarcasm_level)
+col_in, col_out = st.columns([1, 1.8], gap="large")
 
-# Hoofdvenster: Split-Screen (Feedback 4)
-col_left, col_right = st.columns([1, 1], gap="medium")
-
-with col_left:
-    st.markdown("#### [SOURCE_IMAGE]")
-    if u_chat:
-        st.image(u_chat, use_container_width=True)
-        # Simuleer Scanning Overlay (Feedback 2 - Visueel via tekst/animatie)
-        st.caption("SCANNING_ELEMENTS: DETECTED")
-    else:
-        st.info("Awaiting visual input...")
-
-with col_right:
-    st.markdown("#### [ANALYSIS_OUTPUT]")
+with col_in:
+    st.markdown("#### 📥 INTEL INTAKE")
+    u_chat = st.file_uploader("Chat Screenshot", type=['png','jpg','jpeg'])
+    if u_chat: st.image(u_chat, use_container_width=True)
+    u_bio = st.text_area("Bio / Interests", placeholder="Wat weten we over haar?", height=80)
     
-    if 'current_scan' in st.session_state and st.session_state.current_scan:
-        s = st.session_state.current_scan
+    if st.button("⚡ EXECUTE NEURAL SCAN"):
+        if api_key and u_chat:
+            with st.status("Gathering Intelligence...") as status:
+                client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+                c_b64 = base64.b64encode(u_chat.getvalue()).decode()
+                st.session_state.state = run_strategic_scan(client, c_b64, u_bio, vibe, plat)
+                status.update(label="Analysis Complete", state="complete")
+            st.rerun()
+
+with col_out:
+    # --- METRICS ROW (Placeholders) ---
+    st.markdown("#### 📡 STRATEGIC DASHBOARD")
+    m_col1, m_col2, m_col3 = st.columns(3)
+    
+    # --- BEHAVIORAL SIGNALS (Placeholders) ---
+    f_col1, f_col2 = st.columns(2)
+    
+    # --- OUTPUT AREA ---
+    res_area = st.empty()
+
+    if st.session_state.state:
+        s = st.session_state.state
         met = s.get('metrics', {})
-
-        # Dynamische Meters (Feedback 1 & 2)
-        c1, c2, c3 = st.columns(3)
-        c1.metric("WARMTH", f"{met.get('warmth')}%")
-        c1.progress(met.get('warmth', 0) / 100)
         
-        c2.metric("TENSION", f"{met.get('tension')}%")
-        c2.progress(met.get('tension', 0) / 100)
+        # Fill Metrics
+        m_col1.metric("Warmth", f"{met.get('warmth')}%")
+        m_col2.metric("Tension", f"{met.get('tension')}%")
+        m_col3.metric("Ghost Risk", f"{met.get('risk')}%", delta_color="inverse")
         
-        c3.metric("RISK", f"{met.get('risk')}%")
-        c3.progress(met.get('risk', 0) / 100)
-
-        st.markdown("---")
-
-        # Architect Note met Typewriter-ish feel (Feedback 3)
-        st.markdown(f"**ARCHITECT_LOG:** {s.get('note')}")
-
-        # Moves tonen met st.code (Feedback 1)
-        for move in s.get('moves', []):
-            with st.container():
-                st.markdown(f"<div class='alpha-box'>", unsafe_allow_html=True)
-                st.write(f"**{move['type']} MOVE**")
-                st.code(move['zin'], language="text") # Automatische kopieerknop!
-                st.caption(f"Logic: {move['logic']}")
-                st.markdown("</div>", unsafe_allow_html=True)
+        # Fill Flags
+        with f_col1:
+            st.caption("✅ GREEN FLAGS")
+            for f in s.get('green_flags', []): st.markdown(f"<div class='flag-card green-flag'>✦ {f}</div>", unsafe_allow_html=True)
+        with f_col2:
+            st.caption("🚩 RED FLAGS")
+            for f in s.get('red_flags', []): st.markdown(f"<div class='flag-card red-flag'>⚠ {f}</div>", unsafe_allow_html=True)
+        
+        # Results Rendering
+        with res_area.container():
+            st.info(f"**Architect's Note:** {s.get('note')}")
+            for move in s.get('moves', []):
+                card_style = "glow-card flame-mode" if (vibe == "The Flame" or move['type'] == "Power") else "glow-card"
+                st.markdown(f"""
+                    <div class="{card_style}">
+                        <span style="font-family:Orbitron; font-size:0.7rem; color:#fcd34d;">{move['type'].upper()} MOVE</span>
+                        <h2 style="color:white; margin:10px 0;">"{move['zin']}"</h2>
+                        <p style="font-size:0.85rem; opacity:0.8; border-top:1px solid #334155; padding-top:10px;">
+                            <b>Logic:</b> {move['logic']}
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+                if st.button(f"📋 Copy {move['type']} Line"): st.toast("Copied!")
     else:
-        st.warning("SYSTEM STANDBY: Please upload data and initialize scan.")
+        # Skeletons / Initial State
+        m_col1.metric("Warmth", "0%")
+        m_col2.metric("Tension", "0%")
+        m_col3.metric("Ghost Risk", "0%")
+        res_area.info("Initialiseer de scan om tactische data te laden.")
 
-# Geschiedenis Sectie (Feedback 1)
-if st.session_state.history:
-    with st.expander("📜 SCAN_HISTORY (LAST 3)"):
-        for i, hist in enumerate(st.session_state.history):
-            st.write(f"Scan {i+1}: {hist.get('note')[:50]}...")
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SOVEREIGN v21.0 // STRATEGIST_EDITION // COUNTER_RIZZ_ACTIVE</div>", unsafe_allow_html=True)
