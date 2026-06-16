@@ -23,8 +23,17 @@ st.markdown("""
         font-family: 'Inter', sans-serif; 
     }
     
-    /* Verberg standaard Streamlit rommel voor een cleanere app */
-    [data-testid="stHeader"], footer { visibility: hidden; }
+    /* Verberg de header achtergrond en rechter menu, maar behoud het uitklap-pijltje links */
+    [data-testid="stHeader"] { 
+        background-color: transparent !important; 
+        box-shadow: none !important;
+    }
+    [data-testid="stHeader"] > div:first-child { 
+        visibility: hidden; 
+    }
+    footer { 
+        visibility: hidden; 
+    }
 
     /* Custom labels boven invoervelden */
     .lbl {
@@ -94,7 +103,6 @@ st.markdown("""
         border-color: rgba(255, 255, 255, 0.1);
         box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
-    /* Special Glow voor de 'Main Character' of high risk opties */
     .signal-card.main-char { 
         border-color: rgba(99, 102, 241, 0.4) !important; 
         box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
@@ -111,7 +119,7 @@ st.markdown("""
     .rm { background: rgba(245, 158, 11, 0.1); color: #fbbf24; }
     .rh { background: rgba(239, 68, 68, 0.1); color: #f87171; }
     
-    /* De daadwerkelijke openingszin */
+    /* De openingszin */
     .rline { font-size: 17px; font-weight: 600; color: #ffffff; margin-bottom: 10px; letter-spacing: -0.01em; line-height: 1.4; }
     .rwhy {
         font-size: 12px; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.05);
@@ -183,7 +191,6 @@ Return verplicht een valide JSON object:
 # ==============================================================================
 # --- 3. UI ASSEMBLY ---
 # ==============================================================================
-# Minimalistische premium titelontwerp
 st.markdown("<h1 style='text-align:center; font-weight:700; font-size: 28px; letter-spacing: -0.02em; margin-bottom:2px; color:#ffffff;'>Signal</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-family:\"JetBrains Mono\", monospace; font-size:11px; color:#475569; letter-spacing:0.05em; margin-bottom:35px;'>CONVERSATIE-INTELLIGENTIE · v3 (GROK ENGINE)</p>", unsafe_allow_html=True)
 
@@ -295,7 +302,6 @@ with col_out:
                 </div>
             """, unsafe_allow_html=True)
             
-            # Prachtig minimalistisch copy-paste blokje eronder
             st.code(r.get('text'), language="text")
             
     else:
