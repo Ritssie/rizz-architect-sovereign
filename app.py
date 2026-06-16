@@ -1,7 +1,7 @@
 import streamlit as st
+from openai import OpenAI
 import base64
 import json
-from anthropic import Anthropic
 
 # ==============================================================================
 # --- 1. CONFIG & SIGNAL UI DESIGN ---
@@ -29,7 +29,7 @@ st.markdown("""
     }
     .b-purple { background: #EEEDFE; color: #3C3489; border-color: #CECBF6; }
     .b-teal   { background: #E1F5EE;  color: #085041;  border-color: #9FE1CB; }
-    .b-amber  { background: #FAQEDA;  color: #854F0B;  border-color: #FAC775; }
+    .b-amber  { background: #FAEEDA;  color: #854F0B;  border-color: #FAC775; }
 
     /* Custom Signal Card Grid */
     .signal-card {
@@ -60,13 +60,14 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# --- 2. ANTHROPIC CLAUDE ENGINE ---
+# --- 2. STRATEGIC ENGINE (Grok / OpenAI-compatibel) ---
 # ==============================================================================
-def run_signal_scan(api_key, chat_text, chat_b64, chat_mime, bio_text, vibe, platform, stage):
-    client = Anthropic(api_key=api_key)
+def run_signal_scan(api_key, chat_text, chat_b64, bio_text, vibe, platform, stage):
+    # Initialiseer de OpenAI client met de Grok URL
+    client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
     
     no_question = vibe in ['Delusional / Bold', 'Direct & Calm']
-    constraint = "STRICT: Geen vraagtekens in de reply-teksten. Gebruik statements, cold reads of teases." if no_question else ""
+    constraint = "STRICT: Geen vraagtekens (?) in de reply-teksten. Gebruik statements, cold reads of teases." if no_question else ""
 
     sys_prompt = f"""Je bent een scherpe, eerlijke, cultureel-bewuste Gen-Z dating analyst voor de Nederlandse markt.
 Platform: {platform}. Gewenste vibe: {vibe}. Fase: {stage}.
@@ -74,8 +75,7 @@ Platform: {platform}. Gewenste vibe: {vibe}. Fase: {stage}.
 
 Analyseer de conversatie. Reply-teksten moeten in NATUURLIJK DUTCH zijn, eventueel gemixd met Gen-Z slang (low-key, cooking, yapping, ate, valid, clean, ick, main character). Geen cringe pick-uplines, geen alpha-talk, geen uitroeptekens tenzij meme-context, grotendeels lowercase, kort en punchy.
 
-Return ALLEEN een valide JSON object. Start direct met {{ en eindig met }}. Geen extra tekst of markdown codeblocks drumheen.
-Format:
+Return verplicht een valide JSON object:
 {{
   "detected_stage": "Early | Mid | Late",
   "tone": "Dry | Chaotic | Soft | Avoidant | Flirty | Clingy | Mysterious | Direct",
@@ -98,32 +98,25 @@ Format:
   ]
 }}"""
 
-    # Inhoud opbouwen voor Claude's Content blocks
-    content_blocks = []
+    # Gebruikers invoer combineren voor Grok Vision / Text
+    user_content = []
     if chat_text:
-        content_blocks.append({"type": "text", "text": f"Chat transcript:\n{chat_text}"})
+        user_content.append({"type": "text", "text": f"Chat transcript:\n{chat_text}"})
     if chat_b64:
-        content_blocks.append({
-            "type": "image",
-            "source": {
-                "type": "base64",
-                "media_type": chat_mime,
-                "data": chat_b64
-            }
-        })
+        user_content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{chat_b64}"}})
     if bio_text:
-        content_blocks.append({"type": "text", "text": f"Extra context / Bio: {bio_text}"})
+        user_content.append({"type": "text", "text": f"Extra context / Bio: {bio_text}"})
 
     try:
-        response = client.messages.create(
-            model="claude-3-5-sonnet-20241022", # De officiële stabiele Sonnet variant
-            max_tokens=1200,
-            system=sys_prompt,
-            messages=[{"role": "user", "content": content_blocks}]
+        res = client.chat.completions.create(
+            model="grok-4.20-0309-non-reasoning",
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": user_content}
+            ]
         )
-        # Resultaat parsen naar JSON
-        res_text = response.content[0].text.strip()
-        return json.loads(res_text)
+        return json.loads(res.choices[0].message.content)
     except Exception as e:
         st.error(f"Fout tijdens de scan: {str(e)}")
         return None
@@ -132,11 +125,11 @@ Format:
 # --- 3. UI ASSEMBLY ---
 # ==============================================================================
 st.markdown("<h1 style='text-align:center; font-weight:500; margin-bottom:0;'>Signal</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; font-size:13px; color:#475569; margin-bottom:30px;'>Conversatie-intelligentie · v3</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:13px; color:#475569; margin-bottom:30px;'>Conversatie-intelligentie · v3 (Grok Edition)</p>", unsafe_allow_html=True)
 
 with st.sidebar:
     st.markdown("### 🎚️ SIGNAL CONTROLS")
-    api_key = st.text_input("Anthropic API Key", type="password", placeholder="sk-ant-...")
+    api_key = st.text_input("Grok API Key", type="password", placeholder="xai-...")
     plat = st.selectbox("Platform", ["Hinge", "Tinder", "Bumble", "Instagram DMs", "TikTok DMs", "Breeze", "WhatsApp"])
     vibe = st.selectbox("Jouw Vibe", ["Low-key Banter", "Unhinged / Meme", "Delusional / Bold", "Soft Launch", "Dry / Sarcastic", "Direct & Calm"])
     stage = st.selectbox("Situationship Fase", ["Talking Stage", "Almost Dating", "DTR Zone", "Post-Sitch"])
@@ -148,32 +141,31 @@ with st.sidebar:
 col_in, col_out = st.columns([1, 1.2], gap="large")
 
 with col_in:
-    st.markdown("<span class='lbl'>📥 INTEL INTAKE</span>", unsafe_allow_html=True)
+    st.markdown("#### 📥 INTEL INTAKE")
     u_transcript = st.text_area("Chat Transcript", placeholder="Plak hier de gekopieerde chat (WhatsApp, DMs...)", height=150)
     
     u_chat = st.file_uploader("Drop screenshot hier", type=['png','jpg','jpeg'])
     
-    c_b64, c_mime = None, "image/jpeg"
+    c_b64 = None
     if u_chat: 
         st.image(u_chat, use_container_width=True, caption="Chat Preview")
         c_b64 = base64.b64encode(u_chat.getvalue()).decode()
-        c_mime = u_chat.type
 
     u_bio = st.text_area("Context (Optioneel)", placeholder="Bio, interesses, wat weet je over hen...", height=70)
     
     if st.button("📡 ANALYSEER CONVERSATIE", use_container_width=True):
         if not api_key:
-            st.warning("Voer eerst je Anthropic API key in.")
+            st.warning("Voer eerst je Grok API key in.")
         elif not u_transcript and not u_chat:
             st.warning("Voer een transcript in of upload een screenshot.")
         else:
-            with st.status("Reading the room...") as status:
-                st.session_state.state = run_signal_scan(api_key, u_transcript, c_b64, c_mime, u_bio, vibe, plat, stage)
+            with st.status("Reading the room met Grok...") as status:
+                st.session_state.state = run_signal_scan(api_key, u_transcript, c_b64, u_bio, vibe, plat, stage)
                 status.update(label="Analyse Compleet", state="complete")
             st.rerun()
 
 with col_out:
-    st.markdown("<span class='lbl'>📡 STRATEGIC DASHBOARD</span>", unsafe_allow_html=True)
+    st.markdown("#### 📡 STRATEGIC DASHBOARD")
     
     if st.session_state.state:
         s = st.session_state.state
@@ -237,10 +229,10 @@ with col_out:
                 </div>
             """, unsafe_allow_html=True)
             
-            # Streamlit native copy-paste functionaliteit per reply card
+            # Gemakkelijke copy-box
             st.code(r.get('text'), language="text")
             
     else:
         st.info("Voer een chat in of upload een screenshot om te beginnen.")
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SIGNAL v3.0 · NO CRINGE POLICY · POWERED BY CLAUDE SONNET</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SIGNAL v3.0 · NO CRINGE POLICY · POWERED BY GROK ENGINE</div>", unsafe_allow_html=True)
