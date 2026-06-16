@@ -23,7 +23,7 @@ st.markdown("""
         font-family: 'Inter', sans-serif; 
     }
     
-    /* Verberg de header achtergrond en rechter menu, maar behoud het uitklap-pijltje links */
+    /* We maken de header nu HELEMAAL standaards-af en clean */
     [data-testid="stHeader"] { 
         background-color: transparent !important; 
         box-shadow: none !important;
@@ -192,7 +192,18 @@ Return verplicht een valide JSON object:
 # --- 3. UI ASSEMBLY ---
 # ==============================================================================
 st.markdown("<h1 style='text-align:center; font-weight:700; font-size: 28px; letter-spacing: -0.02em; margin-bottom:2px; color:#ffffff;'>Signal</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; font-family:\"JetBrains Mono\", monospace; font-size:11px; color:#475569; letter-spacing:0.05em; margin-bottom:35px;'>CONVERSATIE-INTELLIGENTIE · v3 (GROK ENGINE)</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-family:\"JetBrains Mono\", monospace; font-size:11px; color:#475569; letter-spacing:0.05em; margin-bottom:20px;'>CONVERSATIE-INTELLIGENTIE · v3 (GROK ENGINE)</p>", unsafe_allow_html=True)
+
+# --- FAILSAFE OPEN KNOP (Als de sidebar verborgen is) ---
+col_space1, col_btn, col_space2 = st.columns([1, 0.4, 1])
+with col_btn:
+    # Deze knop staat in het midden en verschijnt altijd om de sidebar met een klik te forceren
+    if st.button("⚙️ Open Controls", use_container_width=True):
+        st.markdown("""<script>
+            window.parent.document.querySelector('button[kind="headerNoPadding"]').click();
+        </script>""", unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 with st.sidebar:
     st.markdown("<span class='lbl'>🎚️ SIGNAL CONTROLS</span>", unsafe_allow_html=True)
