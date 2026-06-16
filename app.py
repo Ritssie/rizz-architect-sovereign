@@ -1,164 +1,246 @@
 import streamlit as st
-from openai import OpenAI
 import base64
 import json
-import time
+from anthropic import Anthropic
 
 # ==============================================================================
-# --- 1. CONFIG & NEON UI ---
+# --- 1. CONFIG & SIGNAL UI DESIGN ---
 # ==============================================================================
-st.set_page_config(page_title="RIZZ ARCHITECT v21.0", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Signal v3 — Conversatie Analyse", page_icon="📡", layout="wide")
 
-if 'state' not in st.session_state: st.session_state.state = None
+if 'state' not in st.session_state: 
+    st.session_state.state = None
 
+# Minimalistische, strakke CSS-styling gebaseerd op de HTML-versie
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
     
     html, body, [data-testid="stAppViewContainer"] { 
-        background-color: #030712 !important; color: #f8fafc !important; font-family: 'Inter', sans-serif; 
+        background-color: #0a0a0f !important; 
+        color: #f1f5f9 !important; 
+        font-family: 'Inter', sans-serif; 
     }
 
-    /* Permanente Containers voor Zero-Shift */
-    .skeleton-container {
-        background: rgba(255,255,255,0.02); border: 1px dashed #30363d;
-        border-radius: 12px; padding: 20px; margin-bottom: 20px; min-height: 100px;
+    /* Badge & Card Styles */
+    .custom-badge {
+        display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+        padding: 4px 10px; border-radius: 20px; border: 0.5px solid; margin-right: 5px; margin-bottom: 5px;
     }
+    .b-purple { background: #EEEDFE; color: #3C3489; border-color: #CECBF6; }
+    .b-teal   { background: #E1F5EE;  color: #085041;  border-color: #9FE1CB; }
+    .b-amber  { background: #FAQEDA;  color: #854F0B;  border-color: #FAC775; }
 
-    .flag-card { padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.85rem; }
-    .green-flag { background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; color: #4ade80; }
-    .red-flag { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #f87171; }
-
-    .glow-card {
-        background: #0f172a; border: 1px solid #1e293b; border-radius: 15px;
-        padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    /* Custom Signal Card Grid */
+    .signal-card {
+        background: #111118; border: 0.5px solid rgba(255,255,255,0.08);
+        border-radius: 14px; padding: 15px; margin-bottom: 12px;
     }
-    .flame-mode { border: 1px solid #f59e0b !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.2) !important; }
+    .signal-card.main-char { border-color: #AFA9EC !important; }
     
-    .stMetric { background: #1e293b; padding: 15px; border-radius: 10px; border: 1px solid #334155; }
+    .rmeta { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .rstyle { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
+    .rtag { font-size: 10px; padding: 2px 7px; border-radius: 10px; }
+    .rl { background: #E1F5EE; color: #085041; }
+    .rm { background: #FAEEDA; color: #854F0B; }
+    .rh { background: #FAECE7; color: #993C1D; }
+    
+    /* Flags Pillen */
+    .pill { font-size: 11px; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; line-height: 1.4; border: 0.5px solid; }
+    .g-p { background: #E1F5EE; color: #085041; border-color: #9FE1CB; }
+    .r-p { background: #FAECE7; color: #993C1D; border-color: #F5C4B3; }
+    .n-p { background: #EEEDFE; color: #3C3489; border-color: #CECBF6; }
+    .a-p { background: #FAEEDA; color: #854F0B; border-color: #FAC775; }
+
+    .analysis-box {
+        font-size: 13px; color: #94a3b8; background: #111118;
+        border-radius: 8px; padding: 12px; line-height: 1.6; margin-bottom: 14px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# --- 2. STRATEGIC ENGINE (Logic & Constraints) ---
+# --- 2. ANTHROPIC CLAUDE ENGINE ---
 # ==============================================================================
-def run_strategic_scan(client, chat_b64, bio_text, vibe, platform):
-    # Harde limitatie op vraagtekens voor offensieve modi
-    constraint = ""
-    if vibe in ["Alpha", "The Flame", "Counter-Rizz"]:
-        constraint = "STRICT: NO question marks (?) allowed. Use statements, teases, or cold reads."
+def run_signal_scan(api_key, chat_text, chat_b64, chat_mime, bio_text, vibe, platform, stage):
+    client = Anthropic(api_key=api_key)
+    
+    no_question = vibe in ['Delusional / Bold', 'Direct & Calm']
+    constraint = "STRICT: Geen vraagtekens in de reply-teksten. Gebruik statements, cold reads of teases." if no_question else ""
 
-    prompt = f"""Role: Sovereign Dating Architect. Platform: {platform}. Vibe: {vibe}.
-    {constraint}
-    Analyze the conversation for behavioral signals (Red/Green flags).
-    Generate 2 strategic moves in Dutch:
-    1. The Tactical Move (Maintenance/Bridge)
-    2. The Power Move (Escalation/The Close/Counter-Rizz)
-    
-    Return JSON: {{
-        "metrics": {{"warmth": int, "tension": int, "risk": int}},
-        "green_flags": ["signal 1", "signal 2"],
-        "red_flags": ["signal 1", "signal 2"],
-        "note": "Analysis matching the percentages",
-        "moves": [
-            {{"type": "Tactical", "zin": "str", "logic": "str"}},
-            {{"type": "Power", "zin": "str", "logic": "str"}}
-        ]
-    }}"""
-    
-    msg = [{"type": "text", "text": f"Bio Context: {bio_text}"}]
+    sys_prompt = f"""Je bent een scherpe, eerlijke, cultureel-bewuste Gen-Z dating analyst voor de Nederlandse markt.
+Platform: {platform}. Gewenste vibe: {vibe}. Fase: {stage}.
+{constraint}
+
+Analyseer de conversatie. Reply-teksten moeten in NATUURLIJK DUTCH zijn, eventueel gemixd met Gen-Z slang (low-key, cooking, yapping, ate, valid, clean, ick, main character). Geen cringe pick-uplines, geen alpha-talk, geen uitroeptekens tenzij meme-context, grotendeels lowercase, kort en punchy.
+
+Return ALLEEN een valide JSON object. Start direct met {{ en eindig met }}. Geen extra tekst of markdown codeblocks drumheen.
+Format:
+{{
+  "detected_stage": "Early | Mid | Late",
+  "tone": "Dry | Chaotic | Soft | Avoidant | Flirty | Clingy | Mysterious | Direct",
+  "metrics": {{
+    "her_investment": 0-100,
+    "signal_strength": 0-100,
+    "try_hard_score": 0-100,
+    "ghost_risk": 0-100
+  }},
+  "green_flags": ["max 3 korte bevindingen"],
+  "red_flags": ["max 2 korte bevindingen"],
+  "self_signals": ["2-3 bevindingen over de gebruiker"],
+  "potential_icks": ["1-2 mogelijke icks"],
+  "analysis": "Eerlijke analyse in 2 zinnen Nederlands. Geen sugarcoating.",
+  "replies": [
+    {{"style": "Low Effort", "text": "...", "why_it_works": "...", "risk_level": "Low", "energy": "Low"}},
+    {{"style": "Playful Banter", "text": "...", "why_it_works": "...", "risk_level": "Low", "energy": "Medium"}},
+    {{"style": "Curious / Warm", "text": "...", "why_it_works": "...", "risk_level": "Medium", "energy": "Medium"}},
+    {{"style": "Main Character", "text": "...", "why_it_works": "...", "risk_level": "High", "energy": "High"}}
+  ]
+}}"""
+
+    # Inhoud opbouwen voor Claude's Content blocks
+    content_blocks = []
+    if chat_text:
+        content_blocks.append({"type": "text", "text": f"Chat transcript:\n{chat_text}"})
     if chat_b64:
-        msg.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{chat_b64}"}})
+        content_blocks.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": chat_mime,
+                "data": chat_b64
+            }
+        })
+    if bio_text:
+        content_blocks.append({"type": "text", "text": f"Extra context / Bio: {bio_text}"})
 
     try:
-        res = client.chat.completions.create(
-            model="grok-4.20-0309-non-reasoning",
-            response_format={"type": "json_object"},
-            messages=[{"role": "system", "content": prompt}, {"role": "user", "content": msg}]
+        response = client.messages.create(
+            model="claude-3-5-sonnet-20241022", # De officiële stabiele Sonnet variant
+            max_tokens=1200,
+            system=sys_prompt,
+            messages=[{"role": "user", "content": content_blocks}]
         )
-        return json.loads(res.choices[0].message.content)
-    except: return None
+        # Resultaat parsen naar JSON
+        res_text = response.content[0].text.strip()
+        return json.loads(res_text)
+    except Exception as e:
+        st.error(f"Fout tijdens de scan: {str(e)}")
+        return None
 
 # ==============================================================================
 # --- 3. UI ASSEMBLY ---
 # ==============================================================================
-st.markdown("<h1 style='text-align:center; font-family:Orbitron; color:#fcd34d;'>RIZZ<span>ARCHITECT</span> v21</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; font-weight:500; margin-bottom:0;'>Signal</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:13px; color:#475569; margin-bottom:30px;'>Conversatie-intelligentie · v3</p>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### 🎚️ STRATEGIC CONTROL")
-    api_key = st.text_input("Grok API Key", type="password")
-    plat = st.selectbox("Platform", ["Tinder", "Bumble", "Hinge"])
-    vibe = st.selectbox("Current Vibe", ["Funny", "Alpha", "The Flame", "Counter-Rizz"])
+    st.markdown("### 🎚️ SIGNAL CONTROLS")
+    api_key = st.text_input("Anthropic API Key", type="password", placeholder="sk-ant-...")
+    plat = st.selectbox("Platform", ["Hinge", "Tinder", "Bumble", "Instagram DMs", "TikTok DMs", "Breeze", "WhatsApp"])
+    vibe = st.selectbox("Jouw Vibe", ["Low-key Banter", "Unhinged / Meme", "Delusional / Bold", "Soft Launch", "Dry / Sarcastic", "Direct & Calm"])
+    stage = st.selectbox("Situationship Fase", ["Talking Stage", "Almost Dating", "DTR Zone", "Post-Sitch"])
     st.markdown("---")
     if st.button("RESET SYSTEM"): 
         st.session_state.state = None
         st.rerun()
 
-col_in, col_out = st.columns([1, 1.8], gap="large")
+col_in, col_out = st.columns([1, 1.2], gap="large")
 
 with col_in:
-    st.markdown("#### 📥 INTEL INTAKE")
-    u_chat = st.file_uploader("Chat Screenshot", type=['png','jpg','jpeg'])
-    if u_chat: st.image(u_chat, use_container_width=True)
-    u_bio = st.text_area("Bio / Interests", placeholder="Wat weten we over haar?", height=80)
+    st.markdown("<span class='lbl'>📥 INTEL INTAKE</span>", unsafe_allow_html=True)
+    u_transcript = st.text_area("Chat Transcript", placeholder="Plak hier de gekopieerde chat (WhatsApp, DMs...)", height=150)
     
-    if st.button("⚡ EXECUTE NEURAL SCAN"):
-        if api_key and u_chat:
-            with st.status("Gathering Intelligence...") as status:
-                client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
-                c_b64 = base64.b64encode(u_chat.getvalue()).decode()
-                st.session_state.state = run_strategic_scan(client, c_b64, u_bio, vibe, plat)
-                status.update(label="Analysis Complete", state="complete")
+    u_chat = st.file_uploader("Drop screenshot hier", type=['png','jpg','jpeg'])
+    
+    c_b64, c_mime = None, "image/jpeg"
+    if u_chat: 
+        st.image(u_chat, use_container_width=True, caption="Chat Preview")
+        c_b64 = base64.b64encode(u_chat.getvalue()).decode()
+        c_mime = u_chat.type
+
+    u_bio = st.text_area("Context (Optioneel)", placeholder="Bio, interesses, wat weet je over hen...", height=70)
+    
+    if st.button("📡 ANALYSEER CONVERSATIE", use_container_width=True):
+        if not api_key:
+            st.warning("Voer eerst je Anthropic API key in.")
+        elif not u_transcript and not u_chat:
+            st.warning("Voer een transcript in of upload een screenshot.")
+        else:
+            with st.status("Reading the room...") as status:
+                st.session_state.state = run_signal_scan(api_key, u_transcript, c_b64, c_mime, u_bio, vibe, plat, stage)
+                status.update(label="Analyse Compleet", state="complete")
             st.rerun()
 
 with col_out:
-    # --- METRICS ROW (Placeholders) ---
-    st.markdown("#### 📡 STRATEGIC DASHBOARD")
-    m_col1, m_col2, m_col3 = st.columns(3)
+    st.markdown("<span class='lbl'>📡 STRATEGIC DASHBOARD</span>", unsafe_allow_html=True)
     
-    # --- BEHAVIORAL SIGNALS (Placeholders) ---
-    f_col1, f_col2 = st.columns(2)
-    
-    # --- OUTPUT AREA ---
-    res_area = st.empty()
-
     if st.session_state.state:
         s = st.session_state.state
         met = s.get('metrics', {})
         
-        # Fill Metrics
-        m_col1.metric("Warmth", f"{met.get('warmth')}%")
-        m_col2.metric("Tension", f"{met.get('tension')}%")
-        m_col3.metric("Ghost Risk", f"{met.get('risk')}%", delta_color="inverse")
+        # Badges Bovenaan
+        st.markdown(f"""
+            <span class='custom-badge b-teal'>📈 {s.get('detected_stage', '—')} stage</span>
+            <span class='custom-badge b-purple'>🎭 Toon: {s.get('tone', '—')}</span>
+            <span class='custom-badge b-amber'>❤️ {stage}</span>
+        """, unsafe_allow_html=True)
         
-        # Fill Flags
+        # Metrics Matrix (4 cellen)
+        m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+        m_col1.metric("Haar Inves.", f"{met.get('her_investment', 0)}%")
+        m_col2.metric("Jouw Signaal", f"{met.get('signal_strength', 0)}%")
+        m_col3.metric("Try-hard", f"{met.get('try_hard_score', 0)}%")
+        m_col4.metric("Ghost Risk", f"{met.get('ghost_risk', 0)}%")
+        
+        st.markdown("<hr style='margin:15px 0; border:0; border-top:0.5px solid rgba(255,255,255,0.08);'>", unsafe_allow_html=True)
+        
+        # Flags & Signalen Matrix (2x2 indeling)
+        f_col1, f_col2 = st.columns(2)
         with f_col1:
-            st.caption("✅ GREEN FLAGS")
-            for f in s.get('green_flags', []): st.markdown(f"<div class='flag-card green-flag'>✦ {f}</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:10px; color:#1D9E75; font-weight:600; margin-bottom:6px;'>GREEN FLAGS</div>", unsafe_allow_html=True)
+            for f in s.get('green_flags', []): st.markdown(f"<div class='pill g-p'>{f}</div>", unsafe_allow_html=True)
+            
+            st.markdown("<div style='font-size:10px; color:#534AB7; font-weight:600; margin-top:10px; margin-bottom:6px;'>JOUW SIGNALEN</div>", unsafe_allow_html=True)
+            for f in s.get('self_signals', []): st.markdown(f"<div class='pill n-p'>{f}</div>", unsafe_allow_html=True)
+            
         with f_col2:
-            st.caption("🚩 RED FLAGS")
-            for f in s.get('red_flags', []): st.markdown(f"<div class='flag-card red-flag'>⚠ {f}</div>", unsafe_allow_html=True)
-        
-        # Results Rendering
-        with res_area.container():
-            st.info(f"**Architect's Note:** {s.get('note')}")
-            for move in s.get('moves', []):
-                card_style = "glow-card flame-mode" if (vibe == "The Flame" or move['type'] == "Power") else "glow-card"
-                st.markdown(f"""
-                    <div class="{card_style}">
-                        <span style="font-family:Orbitron; font-size:0.7rem; color:#fcd34d;">{move['type'].upper()} MOVE</span>
-                        <h2 style="color:white; margin:10px 0;">"{move['zin']}"</h2>
-                        <p style="font-size:0.85rem; opacity:0.8; border-top:1px solid #334155; padding-top:10px;">
-                            <b>Logic:</b> {move['logic']}
-                        </p>
-                    </div>
-                """, unsafe_allow_html=True)
-                if st.button(f"📋 Copy {move['type']} Line"): st.toast("Copied!")
-    else:
-        # Skeletons / Initial State
-        m_col1.metric("Warmth", "0%")
-        m_col2.metric("Tension", "0%")
-        m_col3.metric("Ghost Risk", "0%")
-        res_area.info("Initialiseer de scan om tactische data te laden.")
+            st.markdown("<div style='font-size:10px; color:#D85A30; font-weight:600; margin-bottom:6px;'>RED FLAGS</div>", unsafe_allow_html=True)
+            for f in s.get('red_flags', []): st.markdown(f"<div class='pill r-p'>{f}</div>", unsafe_allow_html=True)
+            
+            st.markdown("<div style='font-size:10px; color:#854F0B; font-weight:600; margin-top:10px; margin-bottom:6px;'>MOGELIJKE ICKS</div>", unsafe_allow_html=True)
+            for f in s.get('potential_icks', []): st.markdown(f"<div class='pill a-p'>{f}</div>", unsafe_allow_html=True)
 
-st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SOVEREIGN v21.0 // STRATEGIST_EDITION // COUNTER_RIZZ_ACTIVE</div>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin:15px 0; border:0; border-top:0.5px solid rgba(255,255,255,0.08);'>", unsafe_allow_html=True)
+        
+        # Eerlijke Analyse Box
+        st.markdown(f"<div class='analysis-box'>{s.get('analysis', '')}</div>", unsafe_allow_html=True)
+        
+        # Antwoorden renderen
+        st.markdown("<span class='lbl'>Voorgestelde Replies</span>", unsafe_allow_html=True)
+        for idx, r in enumerate(s.get('replies', [])):
+            is_main = "main-char" if r.get('style') == "Main Character" else ""
+            risk = r.get('risk_level', 'Low')
+            rl_class = "rl" if risk == "Low" else ("rh" if risk == "High" else "rm")
+            
+            st.markdown(f"""
+                <div class="signal-card {is_main}">
+                    <div class="rmeta">
+                        <span class="rstyle">{r.get('style')}</span>
+                        <span class="rtag {rl_class}">{risk} Risk</span>
+                        <span style="font-size:10px; color:#475569;">· Energy: {r.get('energy')}</span>
+                    </div>
+                    <div style="font-size:16px; font-weight:500; margin-bottom:8px;">"{r.get('text')}"</div>
+                    <div style="font-size:12px; color:#94a3b8; border-top:0.5px solid rgba(255,255,255,0.08); padding-top:8px;">
+                        {r.get('why_it_works')}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Streamlit native copy-paste functionaliteit per reply card
+            st.code(r.get('text'), language="text")
+            
+    else:
+        st.info("Voer een chat in of upload een screenshot om te beginnen.")
+
+st.markdown("<div style='text-align:center; opacity:0.1; font-size:0.5rem; margin-top:50px;'>SIGNAL v3.0 · NO CRINGE POLICY · POWERED BY CLAUDE SONNET</div>", unsafe_allow_html=True)
